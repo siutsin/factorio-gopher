@@ -1,0 +1,8 @@
+-- Coverage scope: only the mod's Lua source. Excludes busted/luacov internals
+-- and the spec files themselves so the report focuses on data-updates.lua.
+return {
+  include = { "mod/" },
+  exclude = { "mod/spec" },
+  reportfile = "luacov.report.out",
+  statsfile = "luacov.stats.out",
+}
