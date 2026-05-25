@@ -53,6 +53,7 @@ package: ## Create Factorio mod zip under build/
 	trap 'rm -rf "$${tmp}"' EXIT; \
 	mkdir -p build "$${tmp}/$${root}"; \
 	cp -R mod/. "$${tmp}/$${root}/"; \
+	find "$${tmp}/$${root}" -name AGENTS.md -type f -delete; \
 	rm -f "$${out}"; \
 	( cd "$${tmp}" && zip -qr "$${out_abs}" "$${root}" ); \
 	zip -T "$${out}" >/dev/null; \
