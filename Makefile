@@ -55,6 +55,7 @@ package: ## Create Factorio mod zip under build/
 	cp -R mod/. "$${tmp}/$${root}/"; \
 	find "$${tmp}/$${root}" -name AGENTS.md -type f -delete; \
 	find "$${tmp}/$${root}" -name .DS_Store -type f -delete; \
+	rm -rf "$${tmp}/$${root}/spec"; \
 	rm -f "$${out}"; \
 	( cd "$${tmp}" && zip -qr "$${out_abs}" "$${root}" ); \
 	zip -T "$${out}" >/dev/null; \
