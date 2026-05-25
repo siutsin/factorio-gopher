@@ -1,0 +1,19 @@
+# working art sources, not shipped with the mod
+art/
+
+# packaging output
+build/
+
+# Claude Code machine-local state
+.claude/
+
+# OS junk
+.DS_Store
+
+# luacov output
+luacov.stats.out
+luacov.report.out
+
+# go coverage output
+coverage.out
+coverage.html

@@ -1,0 +1,63 @@
+version: "2"
+
+run:
+  allow-parallel-runners: true
+  relative-path-mode: gomod
+  tests: true
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocognit
+    - gosec
+    - misspell
+    - nolintlint
+    - revive
+    - testifylint
+    - unconvert
+    - unparam
+  settings:
+    errcheck:
+      check-blank: true
+      check-type-assertions: true
+    gocognit:
+      min-complexity: 15
+    govet:
+      enable:
+        - nilness
+        - shadow
+    misspell:
+      locale: UK
+      ignore-rules:
+        - color
+    nolintlint:
+      allow-unused: false
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        - name: comment-spacings
+        - name: indent-error-flow
+        - name: unexported-return
+          disabled: true
+  exclusions:
+    generated: lax
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+    goimports:
+      local-prefixes:
+        - github.com/siutsin/factorio-gopher
+  exclusions:
+    generated: lax
