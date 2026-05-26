@@ -53,6 +53,7 @@ package: ## Create Factorio mod zip under build/
 	trap 'rm -rf "$${tmp}"' EXIT; \
 	mkdir -p build "$${tmp}/$${root}"; \
 	cp -R mod/. "$${tmp}/$${root}/"; \
+	cp LICENSE "$${tmp}/$${root}/LICENSE"; \
 	find "$${tmp}/$${root}" -name AGENTS.md -type f -delete; \
 	find "$${tmp}/$${root}" -name .DS_Store -type f -delete; \
 	rm -rf "$${tmp}/$${root}/spec"; \

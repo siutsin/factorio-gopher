@@ -1,6 +1,6 @@
 -- Replaces the character with an 8-direction gopher (N/NE/E/SE/S/SW/W/NW)
 -- with shadow layer. Source frames are 1024x1024; scale = 0.0375 keeps
--- on-screen size matched to the v0.0.2 256-source/0.15-scale baseline.
+-- on-screen size matched to the 0.0.2 256-source/0.15-scale baseline.
 
 local SCALE = 0.0375
 -- FRAME must match `frameSize` in internal/sprite (Go pipeline). The
