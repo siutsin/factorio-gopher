@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"io"
 	"log/slog"
 	"os"
 	"testing"
@@ -20,7 +19,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		previous := slog.Default()
-		slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+		slog.SetDefault(slog.New(slog.DiscardHandler))
 		t.Cleanup(func() { slog.SetDefault(previous) })
 
 		exitCode := run(nil, func([]string) (string, int, error) {
@@ -42,7 +41,7 @@ func TestMain(t *testing.T) {
 
 	os.Args = []string{"publish"}
 	t.Setenv("FACTORIO_MOD_PORTAL_API_KEY", "")
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 	exitCode := -1
 	exitProcess = func(code int) { exitCode = code }
 
