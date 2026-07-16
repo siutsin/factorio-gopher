@@ -9,5 +9,14 @@
     automerge: false,
   },
   minimumReleaseAge: '7 days',
+  packageRules: [
+    {
+      description: 'Zizmor action pins its container internally',
+      matchManagers: ['github-actions'],
+      matchDepTypes: ['uses-with'],
+      matchPackageNames: ['ghcr.io/zizmorcore/zizmor'],
+      pinDigests: false,
+    },
+  ],
   rebaseWhen: "behind-base-branch",
 }
