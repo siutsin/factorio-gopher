@@ -1,0 +1,13 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:best-practices',
+    ':semanticCommits'
+  ],
+  automerge: true,
+  major: {
+    automerge: false,
+  },
+  minimumReleaseAge: '7 days',
+  rebaseWhen: "behind-base-branch",
+}
