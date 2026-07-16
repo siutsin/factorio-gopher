@@ -5,11 +5,9 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRun(t *testing.T) {
@@ -32,18 +30,23 @@ func TestRun(t *testing.T) {
 	})
 }
 
-func TestMainSubprocess(t *testing.T) {
-	if os.Getenv("PUBLISH_TEST_MAIN") == "1" {
-		os.Args = []string{"publish"}
-		require.NoError(t, os.Unsetenv("FACTORIO_MOD_PORTAL_API_KEY"))
-		main()
-		return
-	}
+func TestMain(t *testing.T) {
+	previousArgs := os.Args
+	previousExit := exitProcess
+	previousLogger := slog.Default()
+	t.Cleanup(func() {
+		os.Args = previousArgs
+		exitProcess = previousExit
+		slog.SetDefault(previousLogger)
+	})
 
-	cmd := exec.Command(os.Args[0], "-test.run=^TestMainSubprocess$") //nolint:gosec // test binary path
-	cmd.Env = append(os.Environ(), "PUBLISH_TEST_MAIN=1")
-	err := cmd.Run()
-	var exitErr *exec.ExitError
-	require.ErrorAs(t, err, &exitErr)
-	assert.Equal(t, 1, exitErr.ExitCode())
+	os.Args = []string{"publish"}
+	t.Setenv("FACTORIO_MOD_PORTAL_API_KEY", "")
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	exitCode := -1
+	exitProcess = func(code int) { exitCode = code }
+
+	main()
+
+	assert.Equal(t, 1, exitCode)
 }

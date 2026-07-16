@@ -5,34 +5,25 @@
 package gopher
 
 import (
-	"fmt"
 	"image"
 	"image/png"
-	"io"
+	"math"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/image/draw"
 )
 
-// closeWithErr closes c. If c.Close returns a non-nil error and *err is still
-// nil, it overwrites *err with a wrapped close error. Used in deferred file
-// cleanup so legitimate close failures aren't dropped.
-func closeWithErr(c io.Closer, err *error) {
-	if cerr := c.Close(); cerr != nil && *err == nil {
-		*err = fmt.Errorf("close: %w", cerr)
-	}
-}
-
 // loadPNG reads a PNG file and returns it as *image.NRGBA. Non-NRGBA inputs
 // are converted.
 func loadPNG(path string) (img *image.NRGBA, err error) {
-	f, err := os.Open(path) //nolint:gosec // sprite paths come from build config, not user input
+	file, err := openRootedFile(path)
 	if err != nil {
 		return nil, err
 	}
-	defer closeWithErr(f, &err)
+	defer closeWithErr(file, &err)
 
-	src, err := png.Decode(f)
+	src, err := png.Decode(file)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +38,11 @@ func loadPNG(path string) (img *image.NRGBA, err error) {
 
 // savePNG writes an image as PNG to path.
 func savePNG(path string, img image.Image) (err error) {
-	f, err := os.Create(path) //nolint:gosec // sprite paths come from build config, not user input
+	cleanPath, err := writablePath(path)
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(filepath.Clean(cleanPath))
 	if err != nil {
 		return err
 	}
@@ -117,9 +112,16 @@ func resize(src *image.NRGBA, w, h int) *image.NRGBA {
 // scaleAlpha multiplies every pixel's alpha by factor/255.
 func scaleAlpha(img *image.NRGBA, factor uint8) {
 	for i := 3; i < len(img.Pix); i += 4 {
-		// (a * factor) <= 255 * 255 = 65025; /255 fits in uint8.
-		img.Pix[i] = uint8(uint16(img.Pix[i]) * uint16(factor) / 255) //nolint:gosec // bounded by /255 division above
+		scaled := uint16(img.Pix[i]) * uint16(factor) / 255
+		img.Pix[i] = clampByte(scaled)
 	}
+}
+
+func clampByte(value uint16) uint8 {
+	if value > math.MaxUint8 {
+		return math.MaxUint8
+	}
+	return uint8(value)
 }
 
 // blacken sets every pixel's RGB to 0 (preserves alpha).

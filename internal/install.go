@@ -132,7 +132,7 @@ func Uninstall(modSrc, modsDir string) error {
 // readModInfo loads the name+version pair Factorio uses to identify a mod.
 func readModInfo(modSrc string) (modInfo, error) {
 	path := filepath.Join(modSrc, "info.json")
-	data, err := os.ReadFile(path) //nolint:gosec // operator-supplied mod source path; not attacker-controlled
+	data, err := readRootedFile(path)
 	if err != nil {
 		return modInfo{}, fmt.Errorf("read %s: %w", path, err)
 	}
