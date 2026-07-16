@@ -5,11 +5,17 @@
 package main
 
 import (
+	"io"
 	"os"
 
 	gopher "github.com/siutsin/factorio-gopher/internal"
 )
 
+var (
+	exitProcess             = os.Exit
+	standardError io.Writer = os.Stderr
+)
+
 func main() {
-	os.Exit(gopher.CLI(os.Args[1:], os.Stderr))
+	exitProcess(gopher.CLI(os.Args[1:], standardError))
 }

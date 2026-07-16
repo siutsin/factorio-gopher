@@ -9,8 +9,10 @@ import (
 	gopher "github.com/siutsin/factorio-gopher/internal"
 )
 
+var exitProcess = os.Exit
+
 func main() {
-	os.Exit(run(os.Args[1:], gopher.Publish))
+	exitProcess(run(os.Args[1:], gopher.Publish))
 }
 
 func run(args []string, publish func([]string) (string, int, error)) int {

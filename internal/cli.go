@@ -25,7 +25,9 @@ func CLI(args []string, stderr io.Writer) int {
 	modDir := fs.String("mod", DefaultModDir(), "mod source directory containing info.json")
 	modsDir := fs.String("mods", "", "Factorio mods directory (defaults to OS-standard location)")
 	fs.Usage = func() {
-		_, _ = fmt.Fprintln(stderr, "usage: build [-gfx <dir>] [-mod <dir>] [-mods <dir>] {running|shadow|sheets|knight|all|install|uninstall}") //nolint:errcheck // best-effort write to stderr
+		if _, err := fmt.Fprintln(stderr, "usage: build [-gfx <dir>] [-mod <dir>] [-mods <dir>] {running|shadow|sheets|knight|all|install|uninstall}"); err != nil {
+			return
+		}
 		fs.PrintDefaults()
 	}
 

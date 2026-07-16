@@ -9,7 +9,6 @@ import (
 	"errors"
 	"image"
 	"image/color"
-	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -82,10 +81,7 @@ func TestLoadPNGConvertsNonNRGBA(t *testing.T) {
 	src.SetColorIndex(1, 1, 1)
 
 	path := filepath.Join(t.TempDir(), "paletted.png")
-	f, err := os.Create(path) //nolint:gosec // path is a freshly created TempDir, not user input
-	require.NoError(t, err)
-	require.NoError(t, png.Encode(f, src))
-	require.NoError(t, f.Close())
+	require.NoError(t, savePNG(path, src))
 
 	got, err := loadPNG(path)
 	require.NoError(t, err)
@@ -254,6 +250,12 @@ func TestScaleAlpha(t *testing.T) {
 			assert.Equal(t, color.NRGBA{R: 50, G: 60, B: 70, A: tc.wantAlpha}, got, "RGB must not change")
 		})
 	}
+}
+
+func TestClampByte(t *testing.T) {
+	assert.EqualValues(t, 0, clampByte(0))
+	assert.EqualValues(t, 255, clampByte(255))
+	assert.EqualValues(t, 255, clampByte(256))
 }
 
 // TestBlackenPreservesAlpha asserts RGB is zeroed but the per-pixel alpha

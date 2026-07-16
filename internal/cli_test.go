@@ -3,7 +3,6 @@ package gopher
 import (
 	"bytes"
 	"image"
-	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,14 +28,15 @@ func writeAllSources(t *testing.T, dir string) {
 func writeStubPNG(t *testing.T, path string, w, h int) {
 	t.Helper()
 	img := image.NewNRGBA(image.Rect(0, 0, w, h))
-	f, err := os.Create(path) //nolint:gosec // path is rooted in t.TempDir()
-	require.NoError(t, err)
-	require.NoError(t, png.Encode(f, img))
-	require.NoError(t, f.Close())
+	require.NoError(t, savePNG(path, img))
 }
 
 // cliSetup builds a gfx dir for a table-driven case and returns its path.
 type cliSetup func(t *testing.T) string
+
+type errorWriter struct{}
+
+func (errorWriter) Write([]byte) (int, error) { return 0, errBoom }
 
 // emptyDir returns a fresh temp dir with no source PNGs, simulating a
 // brand-new repo where the load step is expected to fail.
@@ -243,6 +243,10 @@ func TestCLI(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCLIUsageWriteError(t *testing.T) {
+	assert.Equal(t, 2, CLI(nil, errorWriter{}))
 }
 
 // TestCLIInstallDefaultModsDir runs install with no -mods flag, exercising

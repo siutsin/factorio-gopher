@@ -75,10 +75,10 @@ func TestPublishCLI(t *testing.T) {
 }
 
 func TestPublishWrapper(t *testing.T) {
-	t.Setenv(modPortalAPIKeyEnv, "")
+	t.Setenv(modPortalEnvName, "")
 	_, exitCode, err := Publish(nil)
 	assert.Equal(t, 1, exitCode)
-	assert.ErrorContains(t, err, modPortalAPIKeyEnv)
+	assert.ErrorContains(t, err, modPortalEnvName)
 }
 
 func TestPublishErrors(t *testing.T) {
@@ -112,7 +112,7 @@ func TestPublishErrors(t *testing.T) {
 			args:      []string{"-mod", modDir},
 			getenv:    func(string) string { return "  " },
 			wantExit:  1,
-			wantError: modPortalAPIKeyEnv,
+			wantError: modPortalEnvName,
 		},
 		{
 			name:      "missing info",
@@ -139,9 +139,8 @@ func TestPublishErrors(t *testing.T) {
 	}
 }
 
-func TestPublishReleaseErrors(t *testing.T) { //nolint:gocognit // table covers distinct protocol failures
-	archivePath := filepath.Join(t.TempDir(), "gopher.zip")
-	require.NoError(t, os.WriteFile(archivePath, []byte("zip"), 0o600))
+func TestPublishReleaseInitErrors(t *testing.T) {
+	archivePath := writeTestArchive(t)
 
 	t.Run("missing archive", func(t *testing.T) {
 		err := publishRelease(
@@ -160,22 +159,18 @@ func TestPublishReleaseErrors(t *testing.T) { //nolint:gocognit // table covers 
 		assert.ErrorContains(t, err, "create init request")
 	})
 
-	t.Run("init transport error", func(t *testing.T) {
+	t.Run("transport error", func(t *testing.T) {
 		client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 			return nil, errBoom
 		})}
 		err := publishRelease(context.Background(), client, "https://example.invalid", "secret", "gopher", archivePath)
 		assert.ErrorContains(t, err, "init upload")
 	})
+}
 
-	cases := []struct {
-		name       string
-		initStatus int
-		initBody   string
-		uploadCode int
-		uploadBody string
-		want       string
-	}{
+func TestPublishReleasePortalErrors(t *testing.T) {
+	archivePath := writeTestArchive(t)
+	cases := []portalErrorCase{
 		{name: "init HTTP error", initStatus: http.StatusForbidden, initBody: `{"error":"Forbidden"}`, want: "HTTP 403"},
 		{name: "invalid init JSON", initBody: `{`, want: "decode init upload"},
 		{name: "init rejected", initBody: `{"error":"Forbidden","message":"denied"}`, want: "init upload rejected"},
@@ -186,26 +181,7 @@ func TestPublishReleaseErrors(t *testing.T) { //nolint:gocognit // table covers 
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var server *httptest.Server
-			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path == "/init" {
-					if tc.initStatus != 0 {
-						w.WriteHeader(tc.initStatus)
-					}
-					if tc.initBody == "upload" {
-						writeTestResponse(t, w, fmt.Sprintf(`{"upload_url":%q}`, server.URL+"/upload"))
-						return
-					}
-					writeTestResponse(t, w, tc.initBody)
-					return
-				}
-				if tc.uploadCode != 0 {
-					w.WriteHeader(tc.uploadCode)
-				}
-				writeTestResponse(t, w, tc.uploadBody)
-			}))
-			t.Cleanup(server.Close)
-
+			server := newPortalErrorServer(t, tc)
 			err := publishRelease(
 				context.Background(),
 				server.Client(),
@@ -217,8 +193,12 @@ func TestPublishReleaseErrors(t *testing.T) { //nolint:gocognit // table covers 
 			assert.ErrorContains(t, err, tc.want)
 		})
 	}
+}
 
-	t.Run("invalid upload URL", func(t *testing.T) {
+func TestPublishReleaseUploadErrors(t *testing.T) {
+	archivePath := writeTestArchive(t)
+
+	t.Run("invalid URL", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			writeTestResponse(t, w, `{"upload_url":"://"}`)
 		}))
@@ -227,7 +207,7 @@ func TestPublishReleaseErrors(t *testing.T) { //nolint:gocognit // table covers 
 		assert.ErrorContains(t, err, "create upload request")
 	})
 
-	t.Run("upload transport error", func(t *testing.T) {
+	t.Run("transport error", func(t *testing.T) {
 		const uploadToken = "secret-upload-token"
 		calls := 0
 		client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
@@ -247,6 +227,46 @@ func TestPublishReleaseErrors(t *testing.T) { //nolint:gocognit // table covers 
 	})
 }
 
+type portalErrorCase struct {
+	name       string
+	initStatus int
+	initBody   string
+	uploadCode int
+	uploadBody string
+	want       string
+}
+
+func newPortalErrorServer(t *testing.T, tc portalErrorCase) *httptest.Server {
+	t.Helper()
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/init" {
+			if tc.initStatus != 0 {
+				w.WriteHeader(tc.initStatus)
+			}
+			if tc.initBody == "upload" {
+				writeTestResponse(t, w, fmt.Sprintf(`{"upload_url":%q}`, server.URL+"/upload"))
+				return
+			}
+			writeTestResponse(t, w, tc.initBody)
+			return
+		}
+		if tc.uploadCode != 0 {
+			w.WriteHeader(tc.uploadCode)
+		}
+		writeTestResponse(t, w, tc.uploadBody)
+	}))
+	t.Cleanup(server.Close)
+	return server
+}
+
+func writeTestArchive(t *testing.T) string {
+	t.Helper()
+	archivePath := filepath.Join(t.TempDir(), "gopher.zip")
+	require.NoError(t, os.WriteFile(archivePath, []byte("zip"), 0o600))
+	return archivePath
+}
+
 func TestMultipartAndResponseErrors(t *testing.T) {
 	_, err := newMultipartRequest(
 		context.Background(),
@@ -255,13 +275,24 @@ func TestMultipartAndResponseErrors(t *testing.T) {
 	)
 	require.ErrorIs(t, err, errBoom)
 
+	_, err = writeMultipartBody(errorWriter{}, func(*multipart.Writer) error { return nil })
+	require.ErrorIs(t, err, errBoom)
+
+	readFailureBody := &trackingReadCloser{Reader: errorReader{}}
 	response := &http.Response{
 		StatusCode: http.StatusOK,
 		Status:     "200 OK",
-		Body:       io.NopCloser(errorReader{}),
+		Body:       readFailureBody,
 	}
 	err = decodePortalResponse("test", response, &struct{}{})
 	require.ErrorIs(t, err, errBoom)
+	assert.True(t, readFailureBody.closed)
+
+	closeFailureBody := &trackingReadCloser{Reader: strings.NewReader(`{}`), closeErr: errBoom}
+	response.Body = closeFailureBody
+	err = decodePortalResponse("test", response, &struct{}{})
+	require.NoError(t, err)
+	assert.True(t, closeFailureBody.closed)
 }
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -288,3 +319,14 @@ func writeTestResponse(t *testing.T, writer io.Writer, body string) {
 type errorReader struct{}
 
 func (errorReader) Read([]byte) (int, error) { return 0, errBoom }
+
+type trackingReadCloser struct {
+	io.Reader
+	closeErr error
+	closed   bool
+}
+
+func (body *trackingReadCloser) Close() error {
+	body.closed = true
+	return body.closeErr
+}

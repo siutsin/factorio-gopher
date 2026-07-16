@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -18,8 +19,8 @@ import (
 )
 
 const (
-	modPortalAPIKeyEnv = "FACTORIO_MOD_PORTAL_API_KEY" //nolint:gosec // environment variable name, not a credential
-	modPortalInitURL   = "https://mods.factorio.com/api/v2/mods/releases/init_upload"
+	modPortalEnvName = "FACTORIO_MOD_PORTAL_API_KEY"
+	modPortalInitURL = "https://mods.factorio.com/api/v2/mods/releases/init_upload"
 )
 
 var modPortalHTTPClient = &http.Client{Timeout: 15 * time.Minute}
@@ -47,9 +48,9 @@ func publish(
 		return "", 2, errors.New("usage: publish [-mod <dir>] [-archive <zip>]")
 	}
 
-	apiKey := strings.TrimSpace(getenv(modPortalAPIKeyEnv))
+	apiKey := strings.TrimSpace(getenv(modPortalEnvName))
 	if apiKey == "" {
-		return "", 1, fmt.Errorf("%s is not set", modPortalAPIKeyEnv)
+		return "", 1, fmt.Errorf("%s is not set", modPortalEnvName)
 	}
 
 	info, err := readModInfo(*modDir)
@@ -83,7 +84,7 @@ func publishRelease(
 	client *http.Client,
 	initURL, apiKey, modName, archivePath string,
 ) error {
-	archive, err := os.ReadFile(archivePath) //nolint:gosec // maintainer-supplied release path
+	archive, err := readRootedFile(archivePath)
 	if err != nil {
 		return fmt.Errorf("read archive: %w", err)
 	}
@@ -155,26 +156,39 @@ func newMultipartRequest(
 	write func(*multipart.Writer) error,
 ) (*http.Request, error) {
 	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	if err := write(writer); err != nil {
+	contentType, err := writeMultipartBody(&body, write)
+	if err != nil {
 		return nil, err
 	}
-	// bytes.Buffer writes cannot fail.
-	_ = writer.Close() //nolint:errcheck // bytes.Buffer writes cannot fail
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, target, &body)
 	if err != nil {
 		return nil, err
 	}
-	request.Header.Set("Content-Type", writer.FormDataContentType())
+	request.Header.Set("Content-Type", contentType)
 	return request, nil
 }
 
+func writeMultipartBody(destination io.Writer, write func(*multipart.Writer) error) (string, error) {
+	writer := multipart.NewWriter(destination)
+	contentType := writer.FormDataContentType()
+	if err := write(writer); err != nil {
+		return "", errors.Join(err, writer.Close())
+	}
+	if err := writer.Close(); err != nil {
+		return "", fmt.Errorf("close multipart body: %w", err)
+	}
+	return contentType, nil
+}
+
 func decodePortalResponse(label string, response *http.Response, target any) error {
-	defer response.Body.Close() //nolint:errcheck // response body close errors do not affect decoded data
 	body, err := io.ReadAll(response.Body)
+	closeErr := response.Body.Close()
 	if err != nil {
-		return fmt.Errorf("%s response: %w", label, err)
+		return fmt.Errorf("%s response: %w", label, errors.Join(err, closeErr))
+	}
+	if closeErr != nil {
+		slog.Warn("close portal response", "operation", label, "err", closeErr)
 	}
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return fmt.Errorf("%s: HTTP %s: %s", label, response.Status, strings.TrimSpace(string(body)))
