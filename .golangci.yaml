@@ -12,6 +12,7 @@ linters:
     - bodyclose
     - copyloopvar
     - durationcheck
+    - errchkjson
     - errorlint
     - gocognit
     - gosec
@@ -19,11 +20,13 @@ linters:
     - loggercheck
     - misspell
     - modernize
+    - nilerr
     - nilnesserr
     - nilnil
     - noctx
     - nolintlint
     - revive
+    - sloglint
     - testifylint
     - unconvert
     - unparam

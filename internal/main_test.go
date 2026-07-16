@@ -3,7 +3,6 @@ package gopher
 import (
 	"image"
 	"image/color"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -17,7 +16,7 @@ import (
 // It also shrinks frameSize and the run-animation layout constants so
 // integration tests process 64×64 sprites instead of 1024×1024.
 func TestMain(m *testing.M) {
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 	SetFrameSize(64)
 	os.Exit(m.Run())
 }
