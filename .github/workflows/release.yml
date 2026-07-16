@@ -98,7 +98,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     environment:
-      name: automation
+      name: deployment
     steps:
       - name: Check out tagged commit
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
