@@ -61,7 +61,7 @@ func Run(gfxDir string) error {
 		if err != nil {
 			return fmt.Errorf("load %s: %w", d, err)
 		}
-		for fi := 0; fi < frames; fi++ {
+		for fi := range frames {
 			bob := int(math.Round(float64(bobAmp) * math.Sin(math.Pi*float64(fi)/2)))
 			frame := makeRunFrame(src, bob, fi)
 			pasteAt(sheet, frame, frameSize*fi, frameSize*ri)
@@ -138,8 +138,8 @@ func (l limbBuffers) splitFrom(src *image.NRGBA) {
 	w := src.Bounds().Dx()
 	h := src.Bounds().Dy()
 	half := w / 2
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			i := y*src.Stride + x*4
 			r, g, b, a := src.Pix[i], src.Pix[i+1], src.Pix[i+2], src.Pix[i+3]
 			if a == 0 {

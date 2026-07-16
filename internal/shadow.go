@@ -138,7 +138,7 @@ func writeShadowIdle(gfxDir string, shadows map[string]*image.NRGBA) error {
 func writeShadowRunning(gfxDir string, shadows map[string]*image.NRGBA) error {
 	sheet := newCanvas(frameSize*frames, frameSize*len(directions))
 	for ri, d := range directions {
-		for fi := 0; fi < frames; fi++ {
+		for fi := range frames {
 			pasteAt(sheet, shadows[d], frameSize*fi, frameSize*ri)
 		}
 	}

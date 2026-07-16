@@ -164,8 +164,8 @@ func TestPasteAt(t *testing.T) {
 // and at least one pixel is opaque (i.e. CatmullRom didn't zero everything).
 func TestResize(t *testing.T) {
 	src := image.NewNRGBA(image.Rect(0, 0, 4, 4))
-	for y := 0; y < 4; y++ {
-		for x := 0; x < 4; x++ {
+	for y := range 4 {
+		for x := range 4 {
 			src.SetNRGBA(x, y, color.NRGBA{R: 200, A: 255})
 		}
 	}
@@ -196,7 +196,7 @@ func TestOverlaySkipsTransparent(t *testing.T) {
 func TestShiftUp(t *testing.T) {
 	build := func() *image.NRGBA {
 		img := image.NewNRGBA(image.Rect(0, 0, 1, 4))
-		for y := 0; y < 4; y++ {
+		for y := range 4 {
 			img.SetNRGBA(0, y, color.NRGBA{R: uint8(y + 1), A: 255})
 		}
 		return img
@@ -275,7 +275,7 @@ func TestBlackenPreservesAlpha(t *testing.T) {
 // bottom row shift the least, and pixels at the top can shear off-canvas.
 func TestShearRightAnchorsBottom(t *testing.T) {
 	src := image.NewNRGBA(image.Rect(0, 0, 4, 4))
-	for y := 0; y < 4; y++ {
+	for y := range 4 {
 		src.SetNRGBA(1, y, color.NRGBA{R: 255, A: 255})
 	}
 
@@ -283,7 +283,7 @@ func TestShearRightAnchorsBottom(t *testing.T) {
 
 	assert.EqualValues(t, 255, out.NRGBAAt(2, 3).R, "bottom row shifted right by 1")
 	assert.EqualValues(t, 0, out.NRGBAAt(1, 3).A, "source x=1 should be empty after shift")
-	for x := 0; x < 4; x++ {
+	for x := range 4 {
 		assert.EqualValues(t, 0, out.NRGBAAt(x, 0).A, "y=0 x=%d fully sheared off", x)
 	}
 }

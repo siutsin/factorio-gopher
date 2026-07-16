@@ -11,11 +11,17 @@ linters:
   enable:
     - bodyclose
     - copyloopvar
+    - durationcheck
     - errorlint
     - gocognit
     - gosec
     - govet
+    - loggercheck
     - misspell
+    - modernize
+    - nilnesserr
+    - nilnil
+    - noctx
     - nolintlint
     - revive
     - testifylint
