@@ -1,5 +1,11 @@
 # Agent Instructions
 
+## Instruction Scope
+
+When working in a subdirectory, check it and each directory between it and the
+repository root for an `AGENTS.md`. Read every applicable file and follow the
+most specific instructions for the files being changed.
+
 ## Linting Protocol
 
 Always run `make lint` after editing any Markdown, Lua, Go, or text file and
@@ -16,7 +22,7 @@ Run `make test` after any code change. This runs:
 - `make test-go` with `go test -race -cover ./...`
 - `make test-lua` with `busted -c mod/spec` plus luacov coverage
 
-`internal/SetFrameSize` is a test-only seam used by both `TestMain` blocks to
+`internal/SetFrameSize` is a test-only seam used by the internal test suite to
 shrink the 1024-px frame to 64-px so integration tests run in seconds rather
 than minutes. Production code never calls it.
 
@@ -36,12 +42,15 @@ to the main menu and reopen the save. Sprite changes do not hot-reload.
 **CRITICAL**: Always re-read the base game source before changing sprite
 fields. The character schema shifts between Factorio versions.
 
-- Entity definition:
-  `~/Library/Application Support/Steam/steamapps/common/Factorio/`
-  `factorio.app/Contents/data/base/prototypes/entity/entities.lua`
-  (search `name = "character"`)
-- Animation tables: same directory, `character-animations.lua`
-- Confirmed against base mod 2.0.77.
+Inspect the files from the Factorio version targeted by `mod/info.json`. Search
+the game installation for:
+
+- `data/base/prototypes/entity/entities.lua` (then search for
+  `name = "character"`)
+- `data/base/prototypes/entity/character-animations.lua`
+
+On macOS these paths are inside `factorio.app/Contents/`. Steam users can
+locate the installation with **Manage > Browse local files**.
 
 ### Specific Cases
 
@@ -63,43 +72,25 @@ folder.
 
 ## Asset Policy
 
-Editable source files (Blender, Aseprite, references) live in `art/` and are
-gitignored. Reproducible PNG inputs and runtime sheets live in `mod/graphics/`;
-`make package` removes directional inputs that Factorio does not load.
+The canonical generator inputs are these tracked 1024-by-1024 RGBA PNGs:
 
-PNGs only; Factorio does not load WebP. Convert with `dwebp` if needed.
+- `mod/graphics/gopher-{n,ne,e,se,s,sw,w,nw}.png`
+- `mod/graphics/knight-{n,ne,e,se,s,sw,w,nw}.png`
 
-Default gopher sources come from
-<https://github.com/golang-samples/gopher-vector> (CC BY 3.0, Takuya Ueda;
-credit required). The mech-armour knight is based on
-<https://github.com/egonelbre/gophers> (CC0 1.0, Egon Elbre).
-Download SVGs into `art/`, then rasterise to `mod/graphics/`:
+`make build` regenerates every derived sprite sheet from those files. A clean
+clone must contain everything the build requires. `make package` removes
+directional inputs that Factorio does not load.
 
-- **Free-standing sprite** (single pose, no matched set): preserve aspect, pad
-  horizontally.
-
-  ```bash
-  rsvg-convert -h 256 -a art/foo.svg \
-    | magick - -background none -gravity center \
-      -extent 256x256 mod/graphics/foo.png
-  ```
-
-- **Matched directional set** (front + side + back share a canvas): force every
-  frame into the same square so they line up in a sheet.
-
-  ```bash
-  rsvg-convert -w 256 -h 256 -a art/foo.svg \
-    | magick - -background none -gravity center \
-      -extent 256x256 mod/graphics/foo.png
-  ```
+Factorio assets must be PNGs. Keep artwork attribution and licence details in
+`README.md` and `mod/README.md`.
 
 ## Tool Selection
 
 - Mod definition: `info.json` for name, version, Factorio version, and deps.
 - Prototype mutation: Lua in `data-updates.lua`.
-- Sprite assets: PNG files under `mod/graphics/`, with RGBA channels.
-- SVG to PNG: `rsvg-convert` to rasterise vector sources.
-- PNG canvas: `magick` to pad rasterised inputs; `go run ./cmd all` stitches
-  the sprite sheets.
-- WebP to PNG: `dwebp` for web source images.
+- Sprite inputs and runtime assets: tracked RGBA PNGs under `mod/graphics/`.
+- Sprite generation: `make build` (or `go run ./cmd all`).
+- Generated-asset verification: after `make build` in a clean clone,
+  `git status --short --untracked-files=all -- mod/graphics` must print
+  nothing.
 - Install: `make install` to symlink `mod/` into Factorio's mods folder.
