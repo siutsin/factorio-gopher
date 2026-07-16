@@ -12,7 +12,7 @@ permissions: { }
 
 jobs:
   zizmor:
-    name: zizmor latest via PyPI
+    name: Analyze workflows
     runs-on: ubuntu-latest
     permissions:
       security-events: write
