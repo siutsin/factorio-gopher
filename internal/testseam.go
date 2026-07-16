@@ -8,7 +8,7 @@ package gopher
 // Concurrency contract: call exactly once from TestMain before m.Run, and
 // never from a t.Parallel test body. SetFrameSize mutates eight package
 // globals (frameSize, footBand{Top,Bot}, armBand{Top,Bot}, bobAmp, footLift,
-// armLift) that Run/Shadow/Sheets read without locking.
+// armLift) that the sprite generators read without locking.
 func SetFrameSize(size int) {
 	scale := float64(size) / 1024.0
 	scaleInt := func(v int) int {

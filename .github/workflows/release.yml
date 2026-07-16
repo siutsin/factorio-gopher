@@ -1,0 +1,138 @@
+name: Publish Factorio Mod
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: factorio-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Install markdownlint-cli2
+        run: npm install --global markdownlint-cli2@0.23.0 # zizmor: ignore[adhoc-packages] pinned CI tool
+
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
+        with:
+          luaVersion: "5.4"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@35d062def313a7699a0d513e996bcf4352f05389 # v6
+
+      - name: Install Lua tools
+        run: |
+          luarocks install busted
+          luarocks install luacheck
+          luarocks install luacov
+
+      - name: Validate tag and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(jq -er '.version' mod/info.json)"
+          if [[ ! "$GITHUB_REF_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag must use the numeric x.y.z format"
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_NAME" != "$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match mod version $version"
+            exit 1
+          fi
+          git fetch --no-tags origin master:refs/remotes/origin/master
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error::Tagged commit is not on master"
+            exit 1
+          fi
+
+      - name: Run linters
+        run: make lint
+
+      - name: Run tests
+        run: make test
+
+      - name: Build sprite sheets
+        run: make build
+
+      - name: Verify generated sprite sheets
+        shell: bash
+        run: |
+          set -euo pipefail
+          changes="$(git status --porcelain --untracked-files=all -- mod/graphics)"
+          if [[ -n "$changes" ]]; then
+            printf '%s\n' "$changes"
+            echo "::error::Generated sprite sheets do not match the tagged commit"
+            exit 1
+          fi
+
+  publish:
+    name: Publish release
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: Automation
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Build sprite sheets
+        run: make build
+
+      - name: Verify generated sprite sheets
+        shell: bash
+        run: |
+          set -euo pipefail
+          changes="$(git status --porcelain --untracked-files=all -- mod/graphics)"
+          if [[ -n "$changes" ]]; then
+            printf '%s\n' "$changes"
+            echo "::error::Generated sprite sheets do not match the tagged commit"
+            exit 1
+          fi
+
+      - name: Package mod
+        run: make package
+
+      - name: Publish to Factorio Mod Portal
+        env:
+          FACTORIO_MOD_PORTAL_API_KEY: ${{ secrets.FACTORIO_MOD_PORTAL_API_KEY }}
+        run: go run ./cmd/publish
