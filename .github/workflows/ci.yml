@@ -41,7 +41,7 @@ jobs:
         run: npm install --global markdownlint-cli2
 
       - name: Set up Lua
-        uses: leafo/gh-actions-lua@v11
+        uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
         with:
           luaVersion: "5.4"
 
