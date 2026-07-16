@@ -12,13 +12,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// writeAllSources fills dir with the eight per-direction stub PNGs that the
-// build pipeline expects to load. Pixels are uniformly transparent because
-// the CLI tests only care about exit codes, not sheet contents.
+// writeAllSources fills dir with the gopher and knight per-direction stub
+// PNGs that the build pipeline expects to load. Pixels are
+// uniformly transparent because the CLI tests only care about exit codes,
+// not sheet contents.
 func writeAllSources(t *testing.T, dir string) {
 	t.Helper()
 	for _, d := range []string{"n", "ne", "e", "se", "s", "sw", "w", "nw"} {
 		writeStubPNG(t, filepath.Join(dir, "gopher-"+d+".png"), frameSize, frameSize)
+		writeStubPNG(t, filepath.Join(dir, "knight-"+d+".png"), frameSize, frameSize)
 	}
 }
 
@@ -133,6 +135,12 @@ func TestCLI(t *testing.T) {
 			wantExit: 0,
 		},
 		{
+			name:     "knight succeeds",
+			setup:    filledDir,
+			args:     func(gfx string) []string { return []string{"-gfx", gfx, "knight"} },
+			wantExit: 0,
+		},
+		{
 			name:     "all succeeds",
 			setup:    filledDir,
 			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
@@ -159,6 +167,18 @@ func TestCLI(t *testing.T) {
 		{
 			name:     "all stops when shadow step fails",
 			setup:    filledDirBlocking("gopher-shadow-8dir.png"),
+			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
+			wantExit: 1,
+		},
+		{
+			name:     "all stops when sheets step fails",
+			setup:    filledDirBlocking("gopher-8dir.png"),
+			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
+			wantExit: 1,
+		},
+		{
+			name:     "all stops when knight step fails",
+			setup:    filledDirBlocking("knight-take-off.png"),
 			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
 			wantExit: 1,
 		},

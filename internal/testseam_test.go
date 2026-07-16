@@ -13,6 +13,7 @@ func TestSetFrameSizeClamp(t *testing.T) {
 	t.Cleanup(func() { SetFrameSize(64) })
 	SetFrameSize(1)
 	assert.Equal(t, 1, frameSize)
+	assert.Equal(t, 1, flightFrameSize())
 	assert.GreaterOrEqual(t, bobAmp, 1, "bobAmp must clamp to >= 1")
 	assert.GreaterOrEqual(t, footLift, 1)
 	assert.GreaterOrEqual(t, armLift, 1)

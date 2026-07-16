@@ -35,6 +35,68 @@ func makeShadow(src *image.NRGBA) *image.NRGBA {
 	return shearRight(canvas, math.Tan(shadowShearDeg*math.Pi/180.0))
 }
 
+// makeFittedShadow preserves wide silhouettes by shearing on an expanded
+// canvas, then fitting the result back into one sprite frame. Knight frames
+// nearly fill their source canvas, so the fixed-width transform in makeShadow
+// would otherwise clip their sword and shield against the right edge.
+func makeFittedShadow(src *image.NRGBA) *image.NRGBA {
+	w := src.Bounds().Dx()
+	h := src.Bounds().Dy()
+
+	flat := clone(src)
+	blacken(flat)
+	scaleAlpha(flat, shadowAlpha)
+
+	newH := int(float64(h) * shadowSquashY)
+	squashed := resize(flat, w, newH)
+	tan := math.Tan(shadowShearDeg * math.Pi / 180.0)
+	maxOffset := int(math.Ceil(float64(h) * tan))
+	expanded := newCanvas(w+maxOffset, h)
+	pasteAt(expanded, squashed, 0, h-newH)
+	projected := shearRight(expanded, tan)
+
+	bounds, ok := alphaBounds(projected)
+	if !ok {
+		return newCanvas(w, h)
+	}
+	trimmed := newCanvas(bounds.Dx(), bounds.Dy())
+	pasteAt(trimmed, projected.SubImage(bounds), 0, 0)
+
+	margin := max(1, w/64)
+	maxWidth := w - 2*margin
+	if trimmed.Bounds().Dx() > maxWidth {
+		trimmed = resize(trimmed, maxWidth, trimmed.Bounds().Dy())
+	}
+
+	out := newCanvas(w, h)
+	x := (w - trimmed.Bounds().Dx()) / 2
+	pasteAt(out, trimmed, x, bounds.Min.Y)
+	return out
+}
+
+func alphaBounds(img *image.NRGBA) (image.Rectangle, bool) {
+	b := img.Bounds()
+	minX, minY := b.Max.X, b.Max.Y
+	maxX, maxY := b.Min.X, b.Min.Y
+	found := false
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if img.Pix[y*img.Stride+x*4+3] == 0 {
+				continue
+			}
+			minX = min(minX, x)
+			minY = min(minY, y)
+			maxX = max(maxX, x)
+			maxY = max(maxY, y)
+			found = true
+		}
+	}
+	if !found {
+		return image.Rectangle{}, false
+	}
+	return image.Rect(minX, minY, maxX+1, maxY+1), true
+}
+
 // Shadow generates all three shadow sheets in gfxDir.
 func Shadow(gfxDir string) error {
 	shadows := make(map[string]*image.NRGBA, len(directions))
