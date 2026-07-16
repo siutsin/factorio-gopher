@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint-cli2
+        run: npm install --global markdownlint-cli2
+
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@v11
+        with:
+          luaVersion: "5.4"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v5
+
+      - name: Install Lua tools
+        run: |
+          luarocks install busted
+          luarocks install luacheck
+          luarocks install luacov
+
+      - name: Run linters
+        run: make lint
+
+      - name: Run tests
+        run: make test

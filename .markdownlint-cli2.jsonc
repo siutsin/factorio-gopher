@@ -1,0 +1,25 @@
+{
+  // Rule configuration for markdownlint-cli2. Standardised onto this file as
+  // the single source of Markdown lint settings.
+  "config": {
+    "MD013": {
+      "line_length": 80,
+      "tables": false,
+      "code_blocks": false
+    },
+    "MD029": {
+      "style": "ordered"
+    }
+  },
+  // Ignore artefact directories that are never part of the repository so
+  // markdownlint only checks tracked Markdown. Covers the CI Lua toolchain
+  // (leafo/gh-actions-lua), npm installs, and local agent/build directories.
+  "ignores": [
+    "**/.luarocks/**",
+    "**/.lua/**",
+    "**/node_modules/**",
+    "**/.scratchpad/**",
+    "**/.claude/**",
+    "**/build/**"
+  ]
+}
