@@ -309,6 +309,29 @@ local knight_flipped_running_with_gun_shadow = {
   draw_as_shadow = true,
 }
 
+local knight_flying_with_gun = {
+  stripes = animation_stripes("knight-flying-with-gun", HOVER_FRAMES, false),
+  width = KNIGHT_FRAME,
+  height = KNIGHT_FRAME,
+  frame_count = HOVER_FRAMES,
+  direction_count = 18,
+  animation_speed = 0.2,
+  scale = KNIGHT_SCALE,
+  shift = KNIGHT_SHIFT,
+}
+
+local knight_flying_with_gun_shadow = {
+  stripes = animation_stripes("knight-flying-with-gun", HOVER_FRAMES, true),
+  width = KNIGHT_FRAME,
+  height = KNIGHT_FRAME,
+  frame_count = HOVER_FRAMES,
+  direction_count = 18,
+  animation_speed = 0.2,
+  scale = KNIGHT_SCALE,
+  shift = KNIGHT_SHIFT,
+  draw_as_shadow = true,
+}
+
 local function knight_flight_animation(name, frame_count, animation_speed, frame_sequence)
   local body = {
     filename = "__gopher__/graphics/knight-" .. name .. ".png",
@@ -474,6 +497,17 @@ local function use_knight(armour_set)
   end
   if armour_set.idle_with_gun_in_air then
     armour_set.idle_with_gun_in_air = knight_hover
+  end
+  if armour_set.idle_in_air then
+    armour_set.idle_in_air = knight_hover
+  end
+  if armour_set.flying then
+    armour_set.flying = knight_hover
+  end
+  if armour_set.flying_with_gun then
+    armour_set.flying_with_gun = {
+      layers = { knight_flying_with_gun, knight_flying_with_gun_shadow }
+    }
   end
   -- The knight has no thruster vents.
   armour_set.smoke_in_air = nil

@@ -94,6 +94,9 @@ func Knight(gfxDir string) error {
 	if err := writeKnightGun(gfxDir, srcs); err != nil {
 		return err
 	}
+	if err := writeKnightFlyingGun(gfxDir, srcs, runtimeFrameSize()); err != nil {
+		return err
+	}
 	if err := writeFlightAnimation(gfxDir, "take-off", srcs, takeOffPoses); err != nil {
 		return err
 	}
@@ -139,6 +142,23 @@ func writeKnightGun(gfxDir string, srcs map[string]*image.NRGBA) error {
 		},
 		func(direction string, _ int) *image.NRGBA {
 			return resize(srcs[direction], size, size)
+		},
+	)
+}
+
+func writeKnightFlyingGun(gfxDir string, srcs map[string]*image.NRGBA, size int) error {
+	return writeArmedAnimation(
+		gfxDir,
+		"knight-flying-with-gun",
+		size,
+		hoverFrames,
+		func(direction string, _ int, frame int) armedFrame {
+			base := resize(srcs[direction], size, size)
+			pose := hoverPoses[frame]
+			return armedFrame{
+				body:   makeFlightBody(base, pose),
+				shadow: makeFlightShadow(makeFittedShadow(base), pose.height),
+			}
 		},
 	)
 }

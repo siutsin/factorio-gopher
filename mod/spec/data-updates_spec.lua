@@ -235,6 +235,26 @@ describe("data-updates", function()
     end
   end)
 
+  it("replaces optional airborne states only for mech armour", function()
+    local stub = { layers = { "optional-flight" } }
+    local set = load_data_updates({
+      armors = { "mech-armor" },
+      idle_in_air = stub,
+      flying = stub,
+      flying_with_gun = stub,
+    })
+    assert.are.equal("__gopher__/graphics/knight-hover.png", set.idle_in_air.layers[1].filename)
+    assert.are.equal("__gopher__/graphics/knight-hover.png", set.flying.layers[1].filename)
+    assert.are.equal(
+      "__gopher__/graphics/knight-flying-with-gun-1.png",
+      set.flying_with_gun.layers[1].stripes[1].filename
+    )
+    assert.are.equal(18, set.flying_with_gun.layers[1].direction_count)
+    assert.are.equal(5, set.flying_with_gun.layers[1].frame_count)
+    assert.are.equal(0.2, set.flying_with_gun.layers[1].animation_speed)
+    assert.is_true(set.flying_with_gun.layers[2].draw_as_shadow)
+  end)
+
   it("does not invent optional airborne states", function()
     local set = load_data_updates({ armors = { "mech-armor" } })
     assert.is_nil(set.idle_in_air)

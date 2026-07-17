@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"image"
 	"image/color"
+	"image/draw"
 	"path/filepath"
 	"testing"
 
@@ -42,6 +43,8 @@ func TestAnimationContactSheetsContainDistinctFrames(t *testing.T) {
 	assertFrameDiversity(t, dir, "gopher-corpse.png", runtimeFrameSize(), corpseFrames, corpseFrames)
 	assertFrameDiversity(t, dir, "knight-running.png", runtimeFrameSize(), frames, 5)
 	assertFrameDiversity(t, dir, "knight-running-with-gun-1.png", runtimeFrameSize(), frames, 5)
+	assertFrameDiversity(t, dir, "knight-flying-with-gun-1.png", runtimeFrameSize(), hoverFrames, 1)
+	assertFrameDiversity(t, dir, "knight-flying-with-gun-1-shadow.png", runtimeFrameSize(), hoverFrames, 3)
 	assertFrameDiversity(t, dir, "knight-mining.png", runtimeFrameSize(), frames, 5)
 	for _, name := range []string{
 		"gopher-running-with-gun-1-shadow.png",
@@ -55,6 +58,33 @@ func TestAnimationContactSheetsContainDistinctFrames(t *testing.T) {
 	} {
 		assertFramesIdentical(t, dir, name, runtimeFrameSize(), frames)
 	}
+}
+
+func TestArmedHoverBodyRemainsAnimated(t *testing.T) {
+	t.Parallel()
+	const size = 128
+	dir := t.TempDir()
+	sources := make(map[string]*image.NRGBA, len(directions))
+	for _, direction := range directions {
+		img := image.NewNRGBA(image.Rect(0, 0, size, size))
+		bodyColour := color.NRGBA{
+			R: 100,
+			G: 100,
+			B: 140,
+			A: 255,
+		}
+		draw.Draw(
+			img,
+			image.Rect(size/4, size/4, 3*size/4, 7*size/8),
+			image.NewUniform(bodyColour),
+			image.Point{},
+			draw.Src,
+		)
+		sources[direction] = img
+	}
+
+	require.NoError(t, writeKnightFlyingGun(dir, sources, size))
+	assertFrameDiversity(t, dir, "knight-flying-with-gun-1.png", size, hoverFrames, 3)
 }
 
 func assertFrameDiversity(
