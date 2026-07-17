@@ -25,7 +25,7 @@ func CLI(args []string, stderr io.Writer) int {
 	modDir := fs.String("mod", DefaultModDir(), "mod source directory containing info.json")
 	modsDir := fs.String("mods", "", "Factorio mods directory (defaults to OS-standard location)")
 	fs.Usage = func() {
-		if _, err := fmt.Fprintln(stderr, "usage: build [-gfx <dir>] [-mod <dir>] [-mods <dir>] {running|shadow|sheets|knight|armed-idle|all|install|uninstall}"); err != nil {
+		if _, err := fmt.Fprintln(stderr, "usage: build [-gfx <dir>] [-mod <dir>] [-mods <dir>] {running|shadow|sheets|knight|corpse|armed-idle|all|install|uninstall}"); err != nil {
 			return
 		}
 		fs.PrintDefaults()
@@ -59,6 +59,8 @@ func dispatch(cmd, gfxDir, modDir, modsDir string) error {
 		return Sheets(gfxDir)
 	case "knight":
 		return Knight(gfxDir)
+	case "corpse":
+		return Corpse(gfxDir)
 	case "armed-idle":
 		return ArmedIdle(gfxDir)
 	case "all":
@@ -81,7 +83,7 @@ func dispatch(cmd, gfxDir, modDir, modsDir string) error {
 }
 
 func buildAll(gfxDir string) error {
-	steps := []func(string) error{Run, Shadow, Sheets, Knight, ArmedIdle}
+	steps := []func(string) error{Run, Shadow, Sheets, Knight, Corpse, ArmedIdle}
 	for _, step := range steps {
 		if err := step(gfxDir); err != nil {
 			return err

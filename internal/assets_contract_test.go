@@ -26,6 +26,8 @@ func TestGeneratedAssetDimensions(t *testing.T) {
 		"gopher-running-with-gun-flipped-2-shadow.png": {X: 2048, Y: 512},
 		"gopher-idle-with-gun.png":                     {X: 256, Y: 2048},
 		"gopher-idle-with-gun-shadow.png":              {X: 256, Y: 2048},
+		"gopher-corpse.png":                            {X: 512, Y: 256},
+		"gopher-corpse-shadow.png":                     {X: 512, Y: 256},
 		"knight-idle.png":                              {X: 256, Y: 2048},
 		"knight-idle-shadow.png":                       {X: 256, Y: 2048},
 		"knight-idle-with-gun.png":                     {X: 256, Y: 2048},
@@ -42,6 +44,8 @@ func TestGeneratedAssetDimensions(t *testing.T) {
 		"knight-take-off-shadow.png":                   {X: 4096, Y: 2048},
 		"knight-hover.png":                             {X: 1280, Y: 2048},
 		"knight-hover-shadow.png":                      {X: 1280, Y: 2048},
+		"knight-corpse.png":                            {X: 512, Y: 256},
+		"knight-corpse-shadow.png":                     {X: 512, Y: 256},
 	}
 
 	for name, want := range assets {
