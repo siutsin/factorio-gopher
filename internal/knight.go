@@ -24,13 +24,13 @@ type flightPose struct {
 
 var groundRunPoses = []flightPose{
 	{scaleX: 1.000, scaleY: 1.000, lift: 0.000},
-	{scaleX: 0.995, scaleY: 1.005, lift: 0.024},
-	{scaleX: 1.000, scaleY: 1.000, lift: 0.000},
-	{scaleX: 1.005, scaleY: 0.995, lift: -0.016},
-	{scaleX: 1.000, scaleY: 1.000, lift: 0.000},
-	{scaleX: 0.995, scaleY: 1.005, lift: 0.024},
-	{scaleX: 1.000, scaleY: 1.000, lift: 0.000},
-	{scaleX: 1.005, scaleY: 0.995, lift: -0.016},
+	{scaleX: 0.960, scaleY: 1.040, lift: 0.000},
+	{scaleX: 0.960, scaleY: 1.040, lift: 0.050},
+	{scaleX: 1.000, scaleY: 1.000, lift: 0.050},
+	{scaleX: 1.020, scaleY: 0.980, lift: 0.010},
+	{scaleX: 1.040, scaleY: 0.960, lift: 0.000},
+	{scaleX: 1.020, scaleY: 0.980, lift: 0.050},
+	{scaleX: 0.995, scaleY: 1.025, lift: 0.000},
 }
 
 // takeOffPoses starts with a grounded pose, compresses for anticipation, then
@@ -101,7 +101,7 @@ func Knight(gfxDir string) error {
 }
 
 func writeKnightIdle(gfxDir string, srcs map[string]*image.NRGBA) error {
-	size := flightFrameSize()
+	size := runtimeFrameSize()
 	bodySheet := newCanvas(size, size*len(directions))
 	shadowSheet := newCanvas(size, size*len(directions))
 	for row, d := range directions {
@@ -113,7 +113,7 @@ func writeKnightIdle(gfxDir string, srcs map[string]*image.NRGBA) error {
 }
 
 func writeKnightRunning(gfxDir string, srcs map[string]*image.NRGBA) error {
-	size := flightFrameSize()
+	size := runtimeFrameSize()
 	bodySheet := newCanvas(size*len(groundRunPoses), size*len(directions))
 	shadowSheet := newCanvas(size*len(groundRunPoses), size*len(directions))
 	for row, d := range directions {
@@ -128,18 +128,19 @@ func writeKnightRunning(gfxDir string, srcs map[string]*image.NRGBA) error {
 }
 
 func writeKnightGun(gfxDir string, srcs map[string]*image.NRGBA) error {
-	const columns, rows = 6, 3
-	size := flightFrameSize()
-	bodySheet := newCanvas(size*columns, size*rows)
-	shadowSheet := newCanvas(size*columns, size*rows)
-	for i, d := range gunMapping {
-		column := i % columns
-		row := i / columns
-		body := resize(srcs[d], size, size)
-		pasteAt(bodySheet, body, column*size, row*size)
-		pasteAt(shadowSheet, makeFittedShadow(body), column*size, row*size)
-	}
-	return saveKnightSheets(gfxDir, "running-with-gun", bodySheet, shadowSheet)
+	size := runtimeFrameSize()
+	return writeArmedRunning(
+		gfxDir,
+		"knight",
+		size,
+		func(direction string, _ int, frame int) *image.NRGBA {
+			body := resize(srcs[direction], size, size)
+			return makeFlightBody(body, groundRunPoses[frame])
+		},
+		func(direction string, _ int) *image.NRGBA {
+			return resize(srcs[direction], size, size)
+		},
+	)
 }
 
 func writeFlightAnimation(
@@ -148,7 +149,7 @@ func writeFlightAnimation(
 	srcs map[string]*image.NRGBA,
 	poses []flightPose,
 ) error {
-	size := flightFrameSize()
+	size := runtimeFrameSize()
 	sheet := newCanvas(size*len(poses), size*len(directions))
 
 	for row, d := range directions {
@@ -203,20 +204,40 @@ func saveKnightSheet(gfxDir, name string, sheet *image.NRGBA, shadow bool) error
 	return nil
 }
 
-func flightFrameSize() int {
-	return max(1, frameSize/2)
-}
-
 func makeFlightBody(src *image.NRGBA, pose flightPose) *image.NRGBA {
 	w := src.Bounds().Dx()
 	h := src.Bounds().Dy()
-	targetW := max(1, int(math.Round(float64(w)*pose.scaleX)))
-	targetH := max(1, int(math.Round(float64(h)*pose.scaleY)))
-	transformed := resize(src, targetW, targetH)
+	bounds, ok := alphaBounds(src)
+	if !ok {
+		return newCanvas(w, h)
+	}
+
+	trimmed := newCanvas(bounds.Dx(), bounds.Dy())
+	pasteAt(trimmed, src.SubImage(bounds), 0, 0)
+	targetW := max(1, int(math.Round(float64(bounds.Dx())*pose.scaleX)))
+	targetH := max(1, int(math.Round(float64(bounds.Dy())*pose.scaleY)))
+	margin := max(1, min(w, h)/128)
+	bottom := min(
+		bounds.Max.Y-int(math.Round(float64(h)*pose.lift)),
+		h-margin,
+	)
+	bottom = max(bottom, margin+1)
+	maxWidth := max(1, w-2*margin)
+	maxHeight := max(1, bottom-margin)
+	if targetW > maxWidth || targetH > maxHeight {
+		scale := min(
+			float64(maxWidth)/float64(targetW),
+			float64(maxHeight)/float64(targetH),
+		)
+		targetW = max(1, int(math.Round(float64(targetW)*scale)))
+		targetH = max(1, int(math.Round(float64(targetH)*scale)))
+	}
+	transformed := resize(trimmed, targetW, targetH)
 
 	out := newCanvas(w, h)
-	x := (w - targetW) / 2
-	y := h - targetH - int(math.Round(float64(h)*pose.lift))
+	x := bounds.Min.X + (bounds.Dx()-targetW)/2
+	x = max(margin, min(x, w-margin-targetW))
+	y := bottom - targetH
 	pasteAt(out, transformed, x, y)
 	return out
 }

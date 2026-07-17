@@ -12,9 +12,10 @@ import (
 	"path/filepath"
 )
 
-// Animation tunables (source-pixel space). On-screen movement is these
-// values × scale (0.0375 in Lua). Defined as vars so tests can shrink them
-// alongside frameSize via SetFrameSize.
+// Animation tunables (source-pixel space). Runtime frames downsample the
+// 1024 px source 4x to 256 px and Lua renders at scale 0.15, so on-screen
+// movement is these values × 0.0375 (0.15 / 4). Defined as vars so tests can
+// shrink them alongside frameSize via SetFrameSize.
 var (
 	bobAmp   = 50
 	footLift = 150
@@ -22,12 +23,31 @@ var (
 )
 
 const (
-	frames = 8
+	frames    = 8
+	gaitSteps = 4
 
 	// Beige limb colour and tolerance per channel.
 	beigeR, beigeG, beigeB = 0xB8, 0x93, 0x7F
 	beigeTol               = 35
 )
+
+type gaitPose struct {
+	leftFoot  int
+	rightFoot int
+	leftArm   int
+	rightArm  int
+}
+
+var runGait = [...]gaitPose{
+	{rightFoot: 1, leftArm: 1},
+	{leftFoot: 2, rightArm: 2},
+	{leftFoot: 4, rightArm: 4},
+	{leftFoot: 3, rightArm: 3},
+	{leftFoot: 1, rightArm: 1},
+	{rightFoot: 2, leftArm: 2},
+	{rightFoot: 4, leftArm: 4},
+	{rightFoot: 3, leftArm: 3},
+}
 
 // Foot/arm Y-bands inside a single 1024-px sprite. Defined as vars (not
 // const) so tests can rescale them when shrinking frameSize via SetFrameSize.
@@ -54,7 +74,8 @@ func abs(x int) int {
 
 // Run writes mod/graphics/gopher-running.png from the per-direction sources.
 func Run(gfxDir string) error {
-	sheet := newCanvas(frameSize*frames, frameSize*len(directions))
+	size := runtimeFrameSize()
+	sheet := newCanvas(size*frames, size*len(directions))
 
 	for ri, d := range directions {
 		src, err := loadPNG(spritePath(gfxDir, d))
@@ -62,9 +83,8 @@ func Run(gfxDir string) error {
 			return fmt.Errorf("load %s: %w", d, err)
 		}
 		for fi := range frames {
-			bob := int(math.Round(float64(bobAmp) * math.Sin(math.Pi*float64(fi)/2)))
-			frame := makeRunFrame(src, bob, fi)
-			pasteAt(sheet, frame, frameSize*fi, frameSize*ri)
+			frame := resize(makeRunFrame(src, runBob(fi), fi), size, size)
+			pasteAt(sheet, frame, size*fi, size*ri)
 		}
 	}
 
@@ -72,8 +92,13 @@ func Run(gfxDir string) error {
 	if err := savePNG(out, sheet); err != nil {
 		return err
 	}
-	slog.Info("wrote sheet", "path", out, "width", frameSize*frames, "height", frameSize*len(directions))
+	slog.Info("wrote sheet", "path", out, "width", size*frames, "height", size*len(directions))
 	return nil
+}
+
+func runBob(frame int) int {
+	phase := math.Pi * float64(frame-1) / 4
+	return int(math.Round(float64(bobAmp) * math.Abs(math.Sin(phase))))
 }
 
 // limbBuffers holds the four per-limb working images plus a body image
@@ -104,23 +129,16 @@ func makeRunFrame(src *image.NRGBA, bob, frameIdx int) *image.NRGBA {
 	h := src.Bounds().Dy()
 
 	bobbed := image.NewNRGBA(image.Rect(0, 0, w, h))
-	if bob >= 0 {
-		copy(bobbed.Pix, src.Pix[bob*src.Stride:])
-	} else {
-		copy(bobbed.Pix[(-bob)*bobbed.Stride:], src.Pix)
-	}
+	copy(bobbed.Pix, src.Pix[bob*src.Stride:])
 
 	limbs := newLimbBuffers(w, h)
 	limbs.splitFrom(bobbed)
 
-	// Opposite-pair gait.
-	if frameIdx%2 == 0 {
-		limbs.leftFoot = shiftUp(limbs.leftFoot, footLift)
-		limbs.rightArm = shiftUp(limbs.rightArm, armLift)
-	} else {
-		limbs.rightFoot = shiftUp(limbs.rightFoot, footLift)
-		limbs.leftArm = shiftUp(limbs.leftArm, armLift)
-	}
+	pose := runGait[frameIdx%len(runGait)]
+	limbs.leftFoot = shiftUp(limbs.leftFoot, footLift*pose.leftFoot/gaitSteps)
+	limbs.rightFoot = shiftUp(limbs.rightFoot, footLift*pose.rightFoot/gaitSteps)
+	limbs.leftArm = shiftUp(limbs.leftArm, armLift*pose.leftArm/gaitSteps)
+	limbs.rightArm = shiftUp(limbs.rightArm, armLift*pose.rightArm/gaitSteps)
 
 	out := clone(limbs.body)
 	overlay(out, limbs.leftFoot)

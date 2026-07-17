@@ -13,7 +13,6 @@ func TestShadow(t *testing.T) {
 	outputs := []string{
 		"gopher-shadow-8dir.png",
 		"gopher-shadow-running.png",
-		"gopher-shadow-running-with-gun.png",
 	}
 
 	cases := []struct {
@@ -25,7 +24,6 @@ func TestShadow(t *testing.T) {
 		{name: "missing source", wantErr: "load"},
 		{name: "save error - 8dir", blockSave: "gopher-shadow-8dir.png"},
 		{name: "save error - running", blockSave: "gopher-shadow-running.png"},
-		{name: "save error - gun", blockSave: "gopher-shadow-running-with-gun.png"},
 	}
 
 	for _, tc := range cases {

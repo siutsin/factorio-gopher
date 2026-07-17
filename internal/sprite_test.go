@@ -191,13 +191,27 @@ func TestOverlaySkipsTransparent(t *testing.T) {
 	assert.Equal(t, color.NRGBA{R: 99, G: 99, B: 99, A: 255}, dst.NRGBAAt(1, 0))
 }
 
+func TestDrawThickLine(t *testing.T) {
+	img := image.NewNRGBA(image.Rect(0, 0, 5, 5))
+	colour := color.NRGBA{R: 10, G: 20, B: 30, A: 255}
+
+	drawThickLine(img, 1, 1, 3, 1, 0, colour)
+	assert.Equal(t, colour, img.NRGBAAt(2, 1))
+
+	drawThickLine(img, 0, 0, 0, 0, 1, colour)
+	assert.Equal(t, colour, img.NRGBAAt(0, 0))
+	assert.Equal(t, colour, img.NRGBAAt(1, 1))
+}
+
 // TestShiftUp covers the three branches of shiftUp (no-op, full clear,
 // partial shift) plus the boundary at amount == h.
 func TestShiftUp(t *testing.T) {
 	build := func() *image.NRGBA {
 		img := image.NewNRGBA(image.Rect(0, 0, 1, 4))
+		colour := uint8(1)
 		for y := range 4 {
-			img.SetNRGBA(0, y, color.NRGBA{R: uint8(y + 1), A: 255})
+			img.SetNRGBA(0, y, color.NRGBA{R: colour, A: 255})
+			colour++
 		}
 		return img
 	}

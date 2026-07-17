@@ -25,7 +25,7 @@ func CLI(args []string, stderr io.Writer) int {
 	modDir := fs.String("mod", DefaultModDir(), "mod source directory containing info.json")
 	modsDir := fs.String("mods", "", "Factorio mods directory (defaults to OS-standard location)")
 	fs.Usage = func() {
-		if _, err := fmt.Fprintln(stderr, "usage: build [-gfx <dir>] [-mod <dir>] [-mods <dir>] {running|shadow|sheets|knight|all|install|uninstall}"); err != nil {
+		if _, err := fmt.Fprintln(stderr, "usage: build [-gfx <dir>] [-mod <dir>] [-mods <dir>] {running|shadow|sheets|knight|armed-idle|all|install|uninstall}"); err != nil {
 			return
 		}
 		fs.PrintDefaults()
@@ -59,17 +59,10 @@ func dispatch(cmd, gfxDir, modDir, modsDir string) error {
 		return Sheets(gfxDir)
 	case "knight":
 		return Knight(gfxDir)
+	case "armed-idle":
+		return ArmedIdle(gfxDir)
 	case "all":
-		if err := Run(gfxDir); err != nil {
-			return err
-		}
-		if err := Shadow(gfxDir); err != nil {
-			return err
-		}
-		if err := Sheets(gfxDir); err != nil {
-			return err
-		}
-		return Knight(gfxDir)
+		return buildAll(gfxDir)
 	case "install":
 		dir, err := resolveModsDir(modsDir)
 		if err != nil {
@@ -85,6 +78,16 @@ func dispatch(cmd, gfxDir, modDir, modsDir string) error {
 	default:
 		return fmt.Errorf("unknown command: %s", cmd)
 	}
+}
+
+func buildAll(gfxDir string) error {
+	steps := []func(string) error{Run, Shadow, Sheets, Knight, ArmedIdle}
+	for _, step := range steps {
+		if err := step(gfxDir); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // defaultModsDirFn is the function used by resolveModsDir to compute the

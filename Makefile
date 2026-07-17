@@ -58,7 +58,7 @@ package: ## Create Factorio mod zip under build/
 	find "$${tmp}/$${root}" -name .DS_Store -type f -delete; \
 	rm -rf "$${tmp}/$${root}/spec"; \
 	for file in \
-		gopher-n.png gopher-ne.png gopher-e.png gopher-se.png \
+		gopher-n.png gopher-ne.png gopher-e.png gopher-se.png gopher-s.png \
 		gopher-sw.png gopher-w.png gopher-nw.png \
 		knight-n.png knight-ne.png knight-e.png knight-se.png \
 		knight-s.png knight-sw.png knight-w.png knight-nw.png; do \
