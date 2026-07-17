@@ -38,9 +38,11 @@ func TestAnimationContactSheetsContainDistinctFrames(t *testing.T) {
 
 	assertFrameDiversity(t, dir, "gopher-running.png", runtimeFrameSize(), frames, frames)
 	assertFrameDiversity(t, dir, "gopher-running-with-gun-1.png", runtimeFrameSize(), frames, frames)
+	assertFrameDiversity(t, dir, "gopher-mining.png", runtimeFrameSize(), frames, 5)
 	assertFrameDiversity(t, dir, "gopher-corpse.png", runtimeFrameSize(), corpseFrames, corpseFrames)
 	assertFrameDiversity(t, dir, "knight-running.png", runtimeFrameSize(), frames, 5)
 	assertFrameDiversity(t, dir, "knight-running-with-gun-1.png", runtimeFrameSize(), frames, 5)
+	assertFrameDiversity(t, dir, "knight-mining.png", runtimeFrameSize(), frames, 5)
 	for _, name := range []string{
 		"gopher-running-with-gun-1-shadow.png",
 		"gopher-running-with-gun-2-shadow.png",

@@ -105,6 +105,17 @@ describe("data-updates", function()
     assert.is_true(shadow.draw_as_shadow)
   end)
 
+  it("mining_with_tool uses an eight-direction tool cycle", function()
+    local set = load_data_updates()
+    local body = set.mining_with_tool.layers[1]
+    assert.are.equal("__gopher__/graphics/gopher-mining.png", body.filename)
+    assert.are.equal(8, body.frame_count)
+    assert.are.equal(8, body.direction_count)
+    assert.are.equal(2, #set.mining_with_tool.layers)
+    assert.is_true(set.mining_with_tool.layers[2].draw_as_shadow)
+    assert.are.same({ 5 }, set.mining_with_tool_particles_animation_positions)
+  end)
+
   it("aligns sounds and footprints with the eight-frame run cycle", function()
     local _, _, character = load_data_updates()
     assert.are.same({ 6 }, character.running_sound_animation_positions)
@@ -139,6 +150,13 @@ describe("data-updates", function()
       set.idle_with_gun.layers[1].filename
     )
     assert.is_true(set.idle_with_gun.layers[2].draw_as_shadow)
+    assert.are.equal(
+      "__gopher__/graphics/knight-mining.png",
+      set.mining_with_tool.layers[1].filename
+    )
+    assert.are.equal(8, set.mining_with_tool.layers[1].frame_count)
+    assert.are.equal(0.45, set.mining_with_tool.layers[1].animation_speed)
+    assert.are.same({ 5 }, set.mining_with_tool_particles_animation_positions)
     assert.are.equal(
       "__gopher__/graphics/knight-running.png",
       set.running.layers[1].filename
