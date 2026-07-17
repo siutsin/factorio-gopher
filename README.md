@@ -2,6 +2,34 @@
 
 A Factorio 2.0 mod that replaces the player character with the Go gopher.
 
+## Support
+
+| Available option                  | API ID                            | No armour | Base armour | Mech armour    |
+|-----------------------------------|-----------------------------------|-----------|-------------|----------------|
+| Idle                              | `idle`                            | Supported | Supported   | Supported      |
+| Idle with gun                     | `idle_with_gun`                   | Supported | Supported   | Supported      |
+| Running                           | `running`                         | Supported | Supported   | Supported      |
+| Running with gun                  | `running_with_gun`                | Supported | Supported   | Supported      |
+| Running with gun (flipped shadow) | `flipped_shadow_running_with_gun` | Supported | Supported   | Supported      |
+| Mining                            | `mining_with_tool`                | Supported | Supported   | Supported      |
+| Airborne idle                     | `idle_in_air`                     | N/A       | N/A         | Conditional[1] |
+| Airborne idle with gun            | `idle_with_gun_in_air`            | N/A       | N/A         | Supported      |
+| Flying                            | `flying`                          | N/A       | N/A         | Conditional[1] |
+| Flying with gun                   | `flying_with_gun`                 | N/A       | N/A         | Conditional[1] |
+| Taking off                        | `take_off`                        | N/A       | N/A         | Supported      |
+| Landing                           | `landing`                         | N/A       | N/A         | Supported      |
+| Corpse graphics                   | `pictures`                        | Supported | Supported   | Supported      |
+| Corpse graphics (armoured)        | `armor_picture_mapping`           | N/A       | Supported   | Supported      |
+
+[1] Not defined by vanilla Space Age; supported if present.
+
+## Roadmap
+
+- Player-colour accents for multiplayer differentiation
+- Animated ground idle and armed-idle cycles
+
+There is no set timeline. Contributions are welcome.
+
 ## Install
 
 ```bash
@@ -14,7 +42,7 @@ This symlinks `mod/` into Factorio's per-OS mods folder:
 - Linux: `~/.factorio/mods`
 - Windows: `%APPDATA%\Factorio\mods`
 
-Then launch Factorio, open Mods, enable "Go Gopher", and start a new game.
+Then launch Factorio, open Mods, enable "Go Gopher", and load or start a game.
 
 `make uninstall` removes the symlink. Override the location with
 `go run ./cmd -mods <path> install`.
@@ -41,12 +69,19 @@ those inputs, then regenerate the derived sheets:
 make build
 ```
 
+Derived runtime frames are 256 px by 256 px and render at `scale = 0.15`.
+Keeping the tracked inputs larger preserves generator quality without making
+Factorio decode the high-resolution working canvases at runtime.
+
 This runs `go run ./cmd all` and writes `gopher-running.png`,
 `gopher-shadow-*.png`, `gopher-8dir.png`,
-`gopher-running-with-gun.png`, `knight-idle*.png`,
+`gopher-running-with-gun-*.png`, `gopher-idle-with-gun*.png`,
+`knight-idle*.png`,
 `knight-running.png`, `knight-running-shadow.png`,
-`knight-running-with-gun*.png`, `knight-take-off*.png`, and
-`knight-hover*.png`.
+`knight-running-with-gun*.png`, `knight-flying-with-gun*.png`,
+`knight-take-off*.png`, and
+`knight-hover*.png`, plus the `gopher-corpse*.png` and
+`knight-corpse*.png` death sheets and both `*-mining*.png` cycles.
 Sprite changes do not hot-reload; exit to
 Factorio's main menu and reopen the save to pick them up.
 
@@ -64,15 +99,13 @@ make test    # Go (-race -cover) + Lua (busted + luacov)
 make lint    # markdown + lua + go
 ```
 
-See `AGENTS.md` for the detailed development workflow and conventions.
-
 ### Releases
 
-Pushing a numeric tag such as `0.0.3` runs the `Publish Factorio Mod` workflow.
-The tag must match `mod/info.json` and point to a commit on `master`. The
-workflow rebuilds and verifies the sprites, runs the full validation suite,
-packages the mod, then uses `go run ./cmd/publish` to upload it through the
-configured `Automation` environment.
+Pushing a numeric version tag runs the `Publish Factorio Mod` workflow. The tag
+must match `mod/info.json` and point to a commit on `master`. The workflow
+rebuilds and verifies the sprites, runs the full validation suite, packages the
+mod, then uses `go run ./cmd/publish` to upload it through the configured
+`Automation` environment.
 
 Factorio release versions cannot be uploaded twice. Always bump
 `mod/info.json` before creating the next tag.

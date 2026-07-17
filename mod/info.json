@@ -1,9 +1,9 @@
 {
   "name": "gopher",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "title": "Go Gopher",
   "author": "Simon Li",
   "factorio_version": "2.0",
   "dependencies": ["base"],
-  "description": "Replaces the player character with the Go gopher."
+  "description": "Adds an animated Go gopher character and a knight variant for Space Age mech armour."
 }
