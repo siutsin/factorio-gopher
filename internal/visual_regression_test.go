@@ -36,10 +36,11 @@ func TestAnimationContactSheetsContainDistinctFrames(t *testing.T) {
 	writeVisualSources(t, dir)
 	require.NoError(t, buildAll(dir))
 
-	assertFrameDiversity(t, dir, "gopher-running.png", runtimeFrameSize(), frames)
-	assertFrameDiversity(t, dir, "gopher-running-with-gun-1.png", runtimeFrameSize(), frames)
-	assertFrameDiversity(t, dir, "knight-running.png", runtimeFrameSize(), 5)
-	assertFrameDiversity(t, dir, "knight-running-with-gun-1.png", runtimeFrameSize(), 5)
+	assertFrameDiversity(t, dir, "gopher-running.png", runtimeFrameSize(), frames, frames)
+	assertFrameDiversity(t, dir, "gopher-running-with-gun-1.png", runtimeFrameSize(), frames, frames)
+	assertFrameDiversity(t, dir, "gopher-corpse.png", runtimeFrameSize(), corpseFrames, corpseFrames)
+	assertFrameDiversity(t, dir, "knight-running.png", runtimeFrameSize(), frames, 5)
+	assertFrameDiversity(t, dir, "knight-running-with-gun-1.png", runtimeFrameSize(), frames, 5)
 	for _, name := range []string{
 		"gopher-running-with-gun-1-shadow.png",
 		"gopher-running-with-gun-2-shadow.png",
@@ -57,17 +58,17 @@ func TestAnimationContactSheetsContainDistinctFrames(t *testing.T) {
 func assertFrameDiversity(
 	t *testing.T,
 	dir, name string,
-	size, minimumUnique int,
+	size, frameCount, minimumUnique int,
 ) {
 	t.Helper()
 	sheet, err := loadPNG(filepath.Join(dir, name))
 	require.NoError(t, err)
-	require.Equal(t, frames*size, sheet.Bounds().Dx(), name)
+	require.Equal(t, frameCount*size, sheet.Bounds().Dx(), name)
 	require.Zero(t, sheet.Bounds().Dy()%size, name)
 	for row := range sheet.Bounds().Dy() / size {
-		hashes := make(map[[sha256.Size]byte]int, frames)
+		hashes := make(map[[sha256.Size]byte]int, frameCount)
 		duplicates := make([]image.Point, 0)
-		for frame := range frames {
+		for frame := range frameCount {
 			rect := image.Rect(frame*size, row*size, (frame+1)*size, (row+1)*size)
 			frameImage := image.NewNRGBA(image.Rect(0, 0, size, size))
 			pasteAt(frameImage, sheet.SubImage(rect), 0, 0)
