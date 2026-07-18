@@ -1,7 +1,7 @@
-// Command build regenerates the procedural gopher sprite sheets and
+// Command gopher regenerates the procedural gopher sprite sheets and
 // installs/uninstalls the mod into Factorio's mods directory.
 //
-// Usage: build {running|shadow|sheets|all|install|uninstall}
+// Usage: gopher {running|shadow|sheets|all|install|uninstall}
 package main
 
 import (

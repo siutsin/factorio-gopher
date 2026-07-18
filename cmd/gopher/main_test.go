@@ -18,7 +18,7 @@ func TestMain(t *testing.T) {
 		standardError = previousStderr
 	})
 
-	os.Args = []string{"build"}
+	os.Args = []string{"gopher"}
 	standardError = io.Discard
 	exitCode := -1
 	exitProcess = func(code int) { exitCode = code }

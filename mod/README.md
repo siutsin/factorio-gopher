@@ -12,14 +12,14 @@ A Factorio 2.0 mod that replaces the player character with the Go gopher.
 | Running with gun                  | `running_with_gun`                | ✅        | ✅          | ✅          |
 | Running with gun (flipped shadow) | `flipped_shadow_running_with_gun` | ✅        | ✅          | ✅          |
 | Mining                            | `mining_with_tool`                | ✅        | ✅          | ✅          |
-| Airborne idle                     | `idle_in_air`                     | N/A       | N/A         | ⚠️[^1]      |
-| Airborne idle with gun            | `idle_with_gun_in_air`            | N/A       | N/A         | ✅          |
-| Flying                            | `flying`                          | N/A       | N/A         | ⚠️[^1]      |
-| Flying with gun                   | `flying_with_gun`                 | N/A       | N/A         | ⚠️[^1]      |
-| Taking off                        | `take_off`                        | N/A       | N/A         | ✅          |
-| Landing                           | `landing`                         | N/A       | N/A         | ✅          |
+| Airborne idle                     | `idle_in_air`                     | ➖        | ➖          | ⚠️[^1]      |
+| Airborne idle with gun            | `idle_with_gun_in_air`            | ➖        | ➖          | ✅          |
+| Flying                            | `flying`                          | ➖        | ➖          | ⚠️          |
+| Flying with gun                   | `flying_with_gun`                 | ➖        | ➖          | ⚠️          |
+| Taking off                        | `take_off`                        | ➖        | ➖          | ✅          |
+| Landing                           | `landing`                         | ➖        | ➖          | ✅          |
 | Corpse graphics                   | `pictures`                        | ✅        | ✅          | ✅          |
-| Corpse graphics (armoured)        | `armor_picture_mapping`           | N/A       | ✅          | ✅          |
+| Corpse graphics (armoured)        | `armor_picture_mapping`           | ➖        | ✅          | ✅          |
 
 [^1]: Not defined by vanilla Space Age; supported if present.
 

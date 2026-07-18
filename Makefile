@@ -16,11 +16,11 @@ lint: lint-markdown lint-lua lint-go ## Run all linters
 
 .PHONY: install
 install: ## Symlink mod/ into Factorio's mods folder
-	@go run ./cmd install
+	@go run ./cmd/gopher install
 
 .PHONY: uninstall
 uninstall: ## Remove the symlink from Factorio's mods folder
-	@go run ./cmd uninstall
+	@go run ./cmd/gopher uninstall
 
 .PHONY: build
 build: ## Rebuild all derived sprite sheets
@@ -29,7 +29,7 @@ build: ## Rebuild all derived sprite sheets
 		echo "$(RED)go not installed. Install with: brew install go$(NC)"; \
 		exit 1; \
 	}
-	@go run ./cmd all
+	@go run ./cmd/gopher all
 	@echo "$(GREEN)Build complete.$(NC)"
 
 .PHONY: package

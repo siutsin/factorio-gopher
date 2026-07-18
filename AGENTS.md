@@ -122,7 +122,7 @@ Factorio assets must be PNGs. Keep artwork attribution and licence details in
 - Corpse mutation: `data-updates.lua` targeting
   `data.raw["character-corpse"]["character-corpse"]`.
 - Sprite inputs and runtime assets: tracked RGBA PNGs under `mod/graphics/`.
-- Sprite generation: `make build` (or `go run ./cmd all`).
+- Sprite generation: `make build` (or `go run ./cmd/gopher all`).
 - Generated-asset verification: after `make build` in a clean clone,
   `git status --short --untracked-files=all -- mod/graphics` must print
   nothing.

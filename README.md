@@ -12,14 +12,14 @@ A Factorio 2.0 mod that replaces the player character with the Go gopher.
 | Running with gun                  | `running_with_gun`                | ✅        | ✅          | ✅          |
 | Running with gun (flipped shadow) | `flipped_shadow_running_with_gun` | ✅        | ✅          | ✅          |
 | Mining                            | `mining_with_tool`                | ✅        | ✅          | ✅          |
-| Airborne idle                     | `idle_in_air`                     | N/A       | N/A         | ⚠️[^1]      |
-| Airborne idle with gun            | `idle_with_gun_in_air`            | N/A       | N/A         | ✅          |
-| Flying                            | `flying`                          | N/A       | N/A         | ⚠️[^1]      |
-| Flying with gun                   | `flying_with_gun`                 | N/A       | N/A         | ⚠️[^1]      |
-| Taking off                        | `take_off`                        | N/A       | N/A         | ✅          |
-| Landing                           | `landing`                         | N/A       | N/A         | ✅          |
+| Airborne idle                     | `idle_in_air`                     | ➖        | ➖          | ⚠️[^1]      |
+| Airborne idle with gun            | `idle_with_gun_in_air`            | ➖        | ➖          | ✅          |
+| Flying                            | `flying`                          | ➖        | ➖          | ⚠️          |
+| Flying with gun                   | `flying_with_gun`                 | ➖        | ➖          | ⚠️          |
+| Taking off                        | `take_off`                        | ➖        | ➖          | ✅          |
+| Landing                           | `landing`                         | ➖        | ➖          | ✅          |
 | Corpse graphics                   | `pictures`                        | ✅        | ✅          | ✅          |
-| Corpse graphics (armoured)        | `armor_picture_mapping`           | N/A       | ✅          | ✅          |
+| Corpse graphics (armoured)        | `armor_picture_mapping`           | ➖        | ✅          | ✅          |
 
 [^1]: Not defined by vanilla Space Age; supported if present.
 
@@ -45,7 +45,7 @@ This symlinks `mod/` into Factorio's per-OS mods folder:
 Then launch Factorio, open Mods, enable "Go Gopher", and load or start a game.
 
 `make uninstall` removes the symlink. Override the location with
-`go run ./cmd -mods <path> install`.
+`go run ./cmd/gopher -mods <path> install`.
 
 ## Development
 
@@ -73,7 +73,7 @@ Derived runtime frames are 256 px by 256 px and render at `scale = 0.15`.
 Keeping the tracked inputs larger preserves generator quality without making
 Factorio decode the high-resolution working canvases at runtime.
 
-This runs `go run ./cmd all` and writes `gopher-running.png`,
+This runs `go run ./cmd/gopher all` and writes `gopher-running.png`,
 `gopher-shadow-*.png`, `gopher-8dir.png`,
 `gopher-running-with-gun-*.png`, `gopher-idle-with-gun*.png`,
 `knight-idle*.png`,
@@ -85,9 +85,9 @@ This runs `go run ./cmd all` and writes `gopher-running.png`,
 Sprite changes do not hot-reload; exit to
 Factorio's main menu and reopen the save to pick them up.
 
-The Go pipeline lives in `cmd/main.go` (entry point) and `internal/*.go` (run
-cycle, shadow projection, sheet stitching, PNG helpers). The Factorio prototype
-mutation is in `mod/data-updates.lua`.
+The Go pipeline lives in `cmd/gopher/main.go` (entry point) and `internal/*.go`
+(run cycle, shadow projection, sheet stitching, PNG helpers). The Factorio
+prototype mutation is in `mod/data-updates.lua`.
 
 ### Make targets
 
