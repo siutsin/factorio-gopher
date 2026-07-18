@@ -73,30 +73,51 @@ package: ## Create Factorio mod zip under build/
 test: test-go test-lua ## Run all tests
 
 .PHONY: test-go
-test-go: ## Run Go tests
+test-go: ## Run Go tests with race detection and require 100% coverage
 	@echo "$(GREEN)Running Go tests...$(NC)"
 	@command -v go >/dev/null 2>&1 || { \
 		echo "$(RED)go not installed. Install with: brew install go$(NC)"; \
 		exit 1; \
 	}
-	@go test -race -cover ./...
+	@set -eu; \
+	profile=$$(mktemp); \
+	trap 'rm -f "$${profile}"' EXIT; \
+	go test -race -covermode=atomic -coverprofile="$${profile}" ./...; \
+	coverage=$$(go tool cover -func="$${profile}" | \
+		awk '$$1 == "total:" { print $$3 }'); \
+	if [ "$${coverage}" != "100.0%" ]; then \
+		echo "$(RED)Go coverage is $${coverage:-unknown}; want 100.0%$(NC)"; \
+		exit 1; \
+	fi; \
+	echo "$(GREEN)Go coverage: $${coverage}$(NC)"
 	@echo "$(GREEN)Go tests passed!$(NC)"
 
 .PHONY: test-lua
-test-lua: ## Run Lua specs with busted (and luacov if installed)
+test-lua: ## Run Lua specs and require 100% coverage
 	@echo "$(GREEN)Running Lua specs...$(NC)"
 	@command -v busted >/dev/null 2>&1 || { \
 		echo "$(RED)busted not installed. Install with: brew install busted$(NC)"; \
 		exit 1; \
 	}
-	@busted -c mod/spec
-	@if command -v luacov >/dev/null 2>&1; then \
-		luacov && tail -n 5 luacov.report.out; \
+	@set -eu; \
+	if command -v luacov >/dev/null 2>&1; then \
+		luacov_bin=$$(command -v luacov); \
 	elif [ -x "$$HOME/.luarocks/bin/luacov" ]; then \
-		"$$HOME/.luarocks/bin/luacov" && tail -n 5 luacov.report.out; \
+		luacov_bin="$$HOME/.luarocks/bin/luacov"; \
 	else \
-		echo "$(YELLOW)luacov not installed; skipping coverage report.$(NC)"; \
-	fi
+		echo "$(RED)luacov not installed. Install with: luarocks install --local luacov$(NC)"; \
+		exit 1; \
+	fi; \
+	rm -f luacov.stats.out luacov.report.out; \
+	busted -c mod/spec; \
+	"$$luacov_bin"; \
+	tail -n 5 luacov.report.out; \
+	coverage=$$(awk '$$1 == "Total" { print $$4 }' luacov.report.out); \
+	if [ "$${coverage}" != "100.00%" ]; then \
+		echo "$(RED)Lua coverage is $${coverage:-unknown}; want 100.00%$(NC)"; \
+		exit 1; \
+	fi; \
+	echo "$(GREEN)Lua coverage: $${coverage}$(NC)"
 	@echo "$(GREEN)Lua specs passed!$(NC)"
 
 .PHONY: lint-markdown

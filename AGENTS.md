@@ -29,8 +29,8 @@ fix any failures immediately. This runs:
 
 Run `make test` after any code change. This runs:
 
-- `make test-go` with `go test -race -cover ./...`
-- `make test-lua` with `busted -c mod/spec` plus luacov coverage
+- `make test-go` with the race detector and a 100% Go coverage gate
+- `make test-lua` with `busted -c mod/spec` and a 100% Lua coverage gate
 
 `internal/SetFrameSize` is a test-only seam used by the internal test suite to
 shrink 1024-px sources to 64 px and 256-px runtime frames to 16 px so
