@@ -3,6 +3,7 @@
 return {
   include = { "mod/" },
   exclude = { "mod/spec" },
+  deletestats = true,
   reportfile = "luacov.report.out",
   statsfile = "luacov.stats.out",
 }

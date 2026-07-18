@@ -4,24 +4,24 @@ A Factorio 2.0 mod that replaces the player character with the Go gopher.
 
 ## Support
 
-| Available option                  | API ID                            | No armour | Base armour | Mech armour    |
-|-----------------------------------|-----------------------------------|-----------|-------------|----------------|
-| Idle                              | `idle`                            | Supported | Supported   | Supported      |
-| Idle with gun                     | `idle_with_gun`                   | Supported | Supported   | Supported      |
-| Running                           | `running`                         | Supported | Supported   | Supported      |
-| Running with gun                  | `running_with_gun`                | Supported | Supported   | Supported      |
-| Running with gun (flipped shadow) | `flipped_shadow_running_with_gun` | Supported | Supported   | Supported      |
-| Mining                            | `mining_with_tool`                | Supported | Supported   | Supported      |
-| Airborne idle                     | `idle_in_air`                     | N/A       | N/A         | Conditional[1] |
-| Airborne idle with gun            | `idle_with_gun_in_air`            | N/A       | N/A         | Supported      |
-| Flying                            | `flying`                          | N/A       | N/A         | Conditional[1] |
-| Flying with gun                   | `flying_with_gun`                 | N/A       | N/A         | Conditional[1] |
-| Taking off                        | `take_off`                        | N/A       | N/A         | Supported      |
-| Landing                           | `landing`                         | N/A       | N/A         | Supported      |
-| Corpse graphics                   | `pictures`                        | Supported | Supported   | Supported      |
-| Corpse graphics (armoured)        | `armor_picture_mapping`           | N/A       | Supported   | Supported      |
+| Available Option                  | API ID                            | No Armour | Base Armour | Mech Armour |
+|-----------------------------------|-----------------------------------|-----------|-------------|-------------|
+| Idle                              | `idle`                            | ✅        | ✅          | ✅          |
+| Idle with gun                     | `idle_with_gun`                   | ✅        | ✅          | ✅          |
+| Running                           | `running`                         | ✅        | ✅          | ✅          |
+| Running with gun                  | `running_with_gun`                | ✅        | ✅          | ✅          |
+| Running with gun (flipped shadow) | `flipped_shadow_running_with_gun` | ✅        | ✅          | ✅          |
+| Mining                            | `mining_with_tool`                | ✅        | ✅          | ✅          |
+| Airborne idle                     | `idle_in_air`                     | N/A       | N/A         | ⚠️[^1]      |
+| Airborne idle with gun            | `idle_with_gun_in_air`            | N/A       | N/A         | ✅          |
+| Flying                            | `flying`                          | N/A       | N/A         | ⚠️[^1]      |
+| Flying with gun                   | `flying_with_gun`                 | N/A       | N/A         | ⚠️[^1]      |
+| Taking off                        | `take_off`                        | N/A       | N/A         | ✅          |
+| Landing                           | `landing`                         | N/A       | N/A         | ✅          |
+| Corpse graphics                   | `pictures`                        | ✅        | ✅          | ✅          |
+| Corpse graphics (armoured)        | `armor_picture_mapping`           | N/A       | ✅          | ✅          |
 
-[1] Not defined by vanilla Space Age; supported if present.
+[^1]: Not defined by vanilla Space Age; supported if present.
 
 ## Roadmap
 
