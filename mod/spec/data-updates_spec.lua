@@ -114,8 +114,9 @@ describe("data-updates", function()
   end)
 
   it("removes vanilla engineer water reflections", function()
-    local _, _, character = load_data_updates()
+    local _, corpse, character = load_data_updates()
     assert.is_nil(character.water_reflection)
+    assert.is_nil(corpse.water_reflection)
   end)
 
   it("uses knight sheets for mech-armour ground and flight", function()
@@ -245,5 +246,84 @@ describe("data-updates", function()
       assert.is_not_nil(set.idle, "armour set " .. i .. " missing idle wiring")
       assert.is_not_nil(set.running, "armour set " .. i .. " missing running wiring")
     end
+  end)
+
+  it("replaces default and mapped corpses without deleting other variations", function()
+    local _, corpse = load_data_updates()
+    local gopher = corpse.pictures[1]
+    assert.are.equal("__gopher__/graphics/gopher-corpse.png", gopher.layers[1].filename)
+    assert.are.equal(2, gopher.layers[1].frame_count)
+    assert.are.equal(2, gopher.layers[1].line_length)
+    assert.is_true(gopher.layers[2].draw_as_shadow)
+    assert.are.equal(1, corpse.armor_picture_mapping["light-armor"])
+    assert.are.equal(1, corpse.armor_picture_mapping["third-party-armor"])
+
+    assert.are.equal(5, #corpse.pictures)
+    local knight = corpse.pictures[5]
+    assert.are.equal("__gopher__/graphics/knight-corpse.png", knight.layers[1].filename)
+    assert.are.equal(256, knight.layers[1].width)
+    assert.are.equal(5, corpse.armor_picture_mapping["mech-armor"])
+  end)
+
+  it("does not add a knight corpse without mech armour", function()
+    local mapping = { ["light-armor"] = 1 }
+    local _, corpse = load_data_updates(nil, {
+      pictures = { "base" },
+      armor_picture_mapping = mapping,
+    })
+    assert.are.equal(1, #corpse.pictures)
+    assert.is_nil(corpse.armor_picture_mapping["mech-armor"])
+  end)
+
+  it("normalizes a singular corpse picture", function()
+    local mapping = { ["light-armor"] = 1 }
+    local _, corpse = load_data_updates(nil, {
+      picture = { layers = { "single" } },
+      pictures = false,
+      armor_picture_mapping = mapping,
+    })
+
+    assert.is_nil(corpse.picture)
+    assert.are.equal(
+      "__gopher__/graphics/gopher-corpse.png",
+      corpse.pictures[1].layers[1].filename
+    )
+    assert.are.equal(1, corpse.armor_picture_mapping["light-armor"])
+  end)
+
+  for label, pictures in pairs({
+    animation = { filename = "character-corpse.png", width = 64, height = 64 },
+    sheet = { sheet = { filename = "character-corpses.png", variation_count = 4 } },
+    sheets = { sheets = { { filename = "character-corpses.png", variation_count = 4 } } },
+  }) do
+    it("normalizes " .. label .. " corpse variations", function()
+      local _, corpse = load_data_updates(nil, { pictures = pictures })
+
+      assert.is_nil(corpse.pictures.filename)
+      assert.is_nil(corpse.pictures.sheet)
+      assert.is_nil(corpse.pictures.sheets)
+      assert.are.equal(2, #corpse.pictures)
+      assert.are.equal(
+        "__gopher__/graphics/gopher-corpse.png",
+        corpse.pictures[1].layers[1].filename
+      )
+      assert.are.equal(
+        "__gopher__/graphics/knight-corpse.png",
+        corpse.pictures[2].layers[1].filename
+      )
+    end)
+  end
+
+  it("supports a corpse without an armour picture mapping", function()
+    local _, corpse = load_data_updates(nil, {
+      pictures = { "base" },
+      armor_picture_mapping = false,
+    })
+
+    assert.are.equal(
+      "__gopher__/graphics/gopher-corpse.png",
+      corpse.pictures[1].layers[1].filename
+    )
+    assert.is_nil(corpse.armor_picture_mapping)
   end)
 end)

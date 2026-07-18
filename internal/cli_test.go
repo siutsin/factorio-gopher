@@ -142,6 +142,12 @@ func TestCLI(t *testing.T) {
 			wantExit: 0,
 		},
 		{
+			name:     "corpse succeeds",
+			setup:    filledDir,
+			args:     func(gfx string) []string { return []string{"-gfx", gfx, "corpse"} },
+			wantExit: 0,
+		},
+		{
 			name:     "armed idle succeeds",
 			setup:    filledDir,
 			args:     func(gfx string) []string { return []string{"-gfx", gfx, "armed-idle"} },
@@ -189,6 +195,13 @@ func TestCLI(t *testing.T) {
 		{
 			name:       "all stops when knight step fails",
 			setup:      filledDirBlocking("knight-running-with-gun-1.png"),
+			args:       func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
+			wantExit:   1,
+			wantAbsent: "gopher-corpse.png",
+		},
+		{
+			name:       "all stops when corpse step fails",
+			setup:      filledDirBlocking("gopher-corpse.png"),
 			args:       func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
 			wantExit:   1,
 			wantAbsent: "gopher-idle-with-gun.png",

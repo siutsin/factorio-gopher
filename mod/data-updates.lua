@@ -296,6 +296,58 @@ local knight_take_off = knight_flight_animation("take-off", 16, 0.6)
 local knight_landing = knight_flight_animation("take-off", 16, 0.6, LANDING_SEQUENCE)
 local knight_hover = knight_flight_animation("hover", HOVER_FRAMES, 0.2)
 
+local gopher_corpse = {
+  layers = {
+    {
+      filename = "__gopher__/graphics/gopher-corpse.png",
+      width = FRAME,
+      height = FRAME,
+      frame_count = 2,
+      line_length = 2,
+      scale = SCALE,
+      shift = SHIFT,
+      usage = "player",
+    },
+    {
+      filename = "__gopher__/graphics/gopher-corpse-shadow.png",
+      width = FRAME,
+      height = FRAME,
+      frame_count = 2,
+      line_length = 2,
+      scale = SCALE,
+      shift = SHIFT,
+      usage = "player",
+      draw_as_shadow = true,
+    },
+  },
+}
+
+local knight_corpse = {
+  layers = {
+    {
+      filename = "__gopher__/graphics/knight-corpse.png",
+      width = KNIGHT_FRAME,
+      height = KNIGHT_FRAME,
+      frame_count = 2,
+      line_length = 2,
+      scale = KNIGHT_SCALE,
+      shift = KNIGHT_SHIFT,
+      usage = "player",
+    },
+    {
+      filename = "__gopher__/graphics/knight-corpse-shadow.png",
+      width = KNIGHT_FRAME,
+      height = KNIGHT_FRAME,
+      frame_count = 2,
+      line_length = 2,
+      scale = KNIGHT_SCALE,
+      shift = KNIGHT_SHIFT,
+      usage = "player",
+      draw_as_shadow = true,
+    },
+  },
+}
+
 local function has_armour(armour_set, armour_name)
   for _, name in ipairs(armour_set.armors or {}) do
     if name == armour_name then
@@ -303,6 +355,34 @@ local function has_armour(armour_set, armour_name)
     end
   end
   return false
+end
+
+local function reskin_corpses()
+  local corpse = data.raw["character-corpse"]["character-corpse"]
+  local pictures = corpse.pictures
+  -- AnimationVariations may be a direct Animation, a sheet/sheets wrapper, or
+  -- an array. Only the array form can safely accept our extra mech variation.
+  if not pictures or (next(pictures) and not pictures[1]) then
+    pictures = {}
+    rawset(corpse, "pictures", pictures)
+  end
+  rawset(corpse, "picture", nil)
+  rawset(corpse, "water_reflection", nil)
+  rawset(pictures, 1, gopher_corpse)
+
+  local mapping = corpse.armor_picture_mapping
+  if not mapping then
+    return
+  end
+  for armour_name in pairs(mapping) do
+    if armour_name ~= "mech-armor" then
+      rawset(mapping, armour_name, 1)
+    end
+  end
+  if mapping["mech-armor"] then
+    table.insert(pictures, knight_corpse)
+    rawset(mapping, "mech-armor", #pictures)
+  end
 end
 
 local function use_gopher(armour_set)
@@ -359,3 +439,5 @@ for _, armour_set in ipairs(character.animations) do
     use_gopher(armour_set)
   end
 end
+
+reskin_corpses()
