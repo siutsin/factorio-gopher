@@ -1,5 +1,5 @@
 // CLI plumbing: flag parsing, subcommand dispatch, and default-path
-// resolution for the build binary. Lives in this package so cmd/main.go
+// resolution for the build binary. Lives in this package so cmd/gopher/main.go
 // stays a one-line entrypoint and the dispatcher is testable in isolation.
 
 package gopher
@@ -111,14 +111,14 @@ func resolveModsDir(flag string) (string, error) {
 }
 
 // DefaultGfxDir resolves <repo>/mod/graphics relative to this source file.
-// Intended for `go run ./cmd` from a clone of the repo; users running a
+// Intended for `go run ./cmd/gopher` from a clone of the repo; users running a
 // built binary should pass `-gfx` explicitly.
 func DefaultGfxDir() string {
 	return filepath.Join(repoRoot(), "mod", "graphics")
 }
 
 // DefaultModDir resolves <repo>/mod relative to this source file. Intended
-// for `go run ./cmd` from a clone of the repo; users running a built binary
+// for `go run ./cmd/gopher` from a clone of the repo; users running a built binary
 // should pass `-mod` explicitly.
 func DefaultModDir() string {
 	return filepath.Join(repoRoot(), "mod")
