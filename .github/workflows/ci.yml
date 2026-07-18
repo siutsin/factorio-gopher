@@ -58,3 +58,12 @@ jobs:
 
       - name: Run tests
         run: make test
+
+      - name: Verify generated assets
+        run: |
+          make build
+          status="$(git status --short --untracked-files=all -- mod/graphics)"
+          if [ -n "$status" ]; then
+            printf '%s\n' "$status"
+            exit 1
+          fi

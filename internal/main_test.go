@@ -14,7 +14,8 @@ import (
 
 // TestMain silences slog so build progress messages don't pollute test logs.
 // It also shrinks frameSize and the run-animation layout constants so
-// integration tests process 64×64 sprites instead of 1024×1024.
+// integration tests process 64x64 sources and 16x16 runtime frames instead
+// of the production pipeline's 1024x1024 sources and 256x256 runtime frames.
 func TestMain(m *testing.M) {
 	slog.SetDefault(slog.New(slog.DiscardHandler))
 	SetFrameSize(64)

@@ -96,6 +96,7 @@ func TestCLI(t *testing.T) {
 		args       func(gfx string) []string
 		wantExit   int
 		wantStderr string
+		wantAbsent string
 	}{
 		{
 			name:       "missing command prints usage and exits 2",
@@ -141,6 +142,12 @@ func TestCLI(t *testing.T) {
 			wantExit: 0,
 		},
 		{
+			name:     "armed idle succeeds",
+			setup:    filledDir,
+			args:     func(gfx string) []string { return []string{"-gfx", gfx, "armed-idle"} },
+			wantExit: 0,
+		},
+		{
 			name:     "all succeeds",
 			setup:    filledDir,
 			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
@@ -159,26 +166,36 @@ func TestCLI(t *testing.T) {
 			wantExit: 1,
 		},
 		{
-			name:     "all stops at first failing step",
-			setup:    emptyDir,
-			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
-			wantExit: 1,
+			name:       "all stops at first failing step",
+			setup:      emptyDir,
+			args:       func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
+			wantExit:   1,
+			wantAbsent: "gopher-shadow-8dir.png",
 		},
 		{
-			name:     "all stops when shadow step fails",
-			setup:    filledDirBlocking("gopher-shadow-8dir.png"),
-			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
-			wantExit: 1,
+			name:       "all stops when shadow step fails",
+			setup:      filledDirBlocking("gopher-shadow-8dir.png"),
+			args:       func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
+			wantExit:   1,
+			wantAbsent: "gopher-8dir.png",
 		},
 		{
-			name:     "all stops when sheets step fails",
-			setup:    filledDirBlocking("gopher-8dir.png"),
-			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
-			wantExit: 1,
+			name:       "all stops when sheets step fails",
+			setup:      filledDirBlocking("gopher-8dir.png"),
+			args:       func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
+			wantExit:   1,
+			wantAbsent: "knight-idle.png",
 		},
 		{
-			name:     "all stops when knight step fails",
-			setup:    filledDirBlocking("knight-take-off.png"),
+			name:       "all stops when knight step fails",
+			setup:      filledDirBlocking("knight-running-with-gun-1.png"),
+			args:       func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
+			wantExit:   1,
+			wantAbsent: "gopher-idle-with-gun.png",
+		},
+		{
+			name:     "all stops when armed idle step fails",
+			setup:    filledDirBlocking("gopher-idle-with-gun.png"),
 			args:     func(gfx string) []string { return []string{"-gfx", gfx, "all"} },
 			wantExit: 1,
 		},
@@ -240,6 +257,9 @@ func TestCLI(t *testing.T) {
 			assert.Equal(t, tc.wantExit, CLI(tc.args(gfx), &stderr))
 			if tc.wantStderr != "" {
 				assert.Contains(t, stderr.String(), tc.wantStderr)
+			}
+			if tc.wantAbsent != "" {
+				assert.NoFileExists(t, filepath.Join(gfx, tc.wantAbsent))
 			}
 		})
 	}

@@ -1,6 +1,8 @@
 package gopher
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"image"
 	"image/color"
 	"path/filepath"
@@ -14,10 +16,16 @@ import (
 // Knight.
 func writeKnightSources(t *testing.T, dir string) {
 	t.Helper()
+	colour := uint8(1)
 	for i, d := range directions {
 		img := image.NewNRGBA(image.Rect(0, 0, frameSize, frameSize))
-		img.SetNRGBA(i, i, color.NRGBA{R: uint8(i + 1), A: 255})
+		for y := frameSize / 4; y < frameSize/2; y++ {
+			for x := frameSize/4 + i; x < frameSize/2+i; x++ {
+				img.SetNRGBA(x, y, color.NRGBA{R: colour, A: 255})
+			}
+		}
 		require.NoError(t, savePNG(knightPath(dir, d), img))
+		colour++
 	}
 }
 
@@ -31,8 +39,12 @@ func TestKnight(t *testing.T) {
 		{name: "knight-idle-shadow.png", width: 1, directions: 8},
 		{name: "knight-running.png", width: frames, directions: 8},
 		{name: "knight-running-shadow.png", width: frames, directions: 8},
-		{name: "knight-running-with-gun.png", width: 6, directions: 3},
-		{name: "knight-running-with-gun-shadow.png", width: 6, directions: 3},
+		{name: "knight-running-with-gun-1.png", width: frames, directions: 16},
+		{name: "knight-running-with-gun-1-shadow.png", width: frames, directions: 16},
+		{name: "knight-running-with-gun-2.png", width: frames, directions: 2},
+		{name: "knight-running-with-gun-2-shadow.png", width: frames, directions: 2},
+		{name: "knight-running-with-gun-flipped-1-shadow.png", width: frames, directions: 16},
+		{name: "knight-running-with-gun-flipped-2-shadow.png", width: frames, directions: 2},
 		{name: "knight-take-off.png", width: takeOffFrames, directions: 8},
 		{name: "knight-take-off-shadow.png", width: takeOffFrames, directions: 8},
 		{name: "knight-hover.png", width: hoverFrames, directions: 8},
@@ -50,8 +62,18 @@ func TestKnight(t *testing.T) {
 		{name: "save error - idle shadow", blockSave: "knight-idle-shadow.png"},
 		{name: "save error - running", blockSave: "knight-running.png"},
 		{name: "save error - running shadow", blockSave: "knight-running-shadow.png"},
-		{name: "save error - gun", blockSave: "knight-running-with-gun.png"},
-		{name: "save error - gun shadow", blockSave: "knight-running-with-gun-shadow.png"},
+		{name: "save error - gun 1", blockSave: "knight-running-with-gun-1.png"},
+		{name: "save error - gun shadow 1", blockSave: "knight-running-with-gun-1-shadow.png"},
+		{name: "save error - gun 2", blockSave: "knight-running-with-gun-2.png"},
+		{name: "save error - gun shadow 2", blockSave: "knight-running-with-gun-2-shadow.png"},
+		{
+			name:      "save error - flipped gun shadow 1",
+			blockSave: "knight-running-with-gun-flipped-1-shadow.png",
+		},
+		{
+			name:      "save error - flipped gun shadow 2",
+			blockSave: "knight-running-with-gun-flipped-2-shadow.png",
+		},
 		{name: "save error - takeoff", blockSave: "knight-take-off.png"},
 		{name: "save error - takeoff shadow", blockSave: "knight-take-off-shadow.png"},
 		{name: "save error - hover", blockSave: "knight-hover.png"},
@@ -87,8 +109,8 @@ func TestKnight(t *testing.T) {
 						image.Rect(
 							0,
 							0,
-							flightFrameSize()*output.width,
-							flightFrameSize()*output.directions,
+							runtimeFrameSize()*output.width,
+							runtimeFrameSize()*output.directions,
 						),
 						img.Bounds(),
 					)
@@ -114,30 +136,78 @@ func TestKnightRejectsWrongDimensions(t *testing.T) {
 
 func TestWriteKnightGunUsesFactorioDirectionOrder(t *testing.T) {
 	t.Parallel()
-	size := flightFrameSize()
+	wantDirections := []string{
+		"n", "n", "n", "ne", "ne", "ne",
+		"ne", "e", "e", "e", "e", "se",
+		"se", "se", "se", "s", "s", "s",
+	}
+	require.Equal(t, wantDirections, gunMapping)
+	size := runtimeFrameSize()
 	srcs := make(map[string]*image.NRGBA, len(directions))
-	for i, direction := range directions {
+	colour := uint8(1)
+	for _, direction := range directions {
 		img := image.NewNRGBA(image.Rect(0, 0, size, size))
 		for y := range size {
 			for x := range size {
-				img.SetNRGBA(x, y, color.NRGBA{R: uint8(i + 1), A: 255})
+				img.SetNRGBA(x, y, color.NRGBA{R: colour, A: 255})
 			}
 		}
 		srcs[direction] = img
+		colour++
 	}
 
 	dir := t.TempDir()
 	require.NoError(t, writeKnightGun(dir, srcs))
-	sheet, err := loadPNG(filepath.Join(dir, "knight-running-with-gun.png"))
-	require.NoError(t, err)
-
-	for i, direction := range gunMapping {
-		column := i % 6
-		row := i / 6
-		want := srcs[direction].NRGBAAt(size/2, size/2)
-		got := sheet.NRGBAAt(column*size+size/2, row*size+size/2)
-		assert.Equal(t, want, got, "cell %d should use %s", i, direction)
+	for i, direction := range wantDirections {
+		stripe := i/armedDirectionsPerStripe + 1
+		row := i % armedDirectionsPerStripe
+		sheet, err := loadPNG(filepath.Join(dir, fmt.Sprintf("knight-running-with-gun-%d.png", stripe)))
+		require.NoError(t, err)
+		for frame := range frames {
+			x := frame*size + size/2
+			y := row*size + size/2
+			assert.Equal(
+				t,
+				srcs[direction].NRGBAAt(size/2, size/2).R,
+				sheet.NRGBAAt(x, y).R,
+				"direction %d frame %d",
+				i,
+				frame,
+			)
+		}
 	}
+}
+
+func TestFlippedArmedShadowMirrorsRenderedBody(t *testing.T) {
+	t.Parallel()
+	size := runtimeFrameSize()
+	srcs := make(map[string]*image.NRGBA, len(directions))
+	for _, direction := range directions {
+		srcs[direction] = image.NewNRGBA(image.Rect(0, 0, size, size))
+	}
+	for y := size / 4; y < 3*size/4; y++ {
+		for x := size / 8; x < size/3; x++ {
+			srcs["e"].SetNRGBA(x, y, color.NRGBA{R: 100, A: 255})
+		}
+	}
+	for y := size / 8; y < size/3; y++ {
+		for x := 2 * size / 3; x < 7*size/8; x++ {
+			srcs["w"].SetNRGBA(x, y, color.NRGBA{R: 200, A: 255})
+		}
+	}
+
+	dir := t.TempDir()
+	require.NoError(t, writeKnightGun(dir, srcs))
+	sheet, err := loadPNG(filepath.Join(dir, "knight-running-with-gun-flipped-1-shadow.png"))
+	require.NoError(t, err)
+	row := 7 // First row mapped to the east source.
+	actual := image.NewNRGBA(image.Rect(0, 0, size, size))
+	pasteAt(actual, sheet.SubImage(image.Rect(0, row*size, size, (row+1)*size)), 0, 0)
+	want := makeFittedShadow(flipHorizontal(resize(srcs["e"], size, size)))
+	wrongWestSource := makeFittedShadow(resize(srcs["w"], size, size))
+
+	assert.Equal(t, want.Pix, actual.Pix)
+	assert.NotEqual(t, wrongWestSource.Pix, actual.Pix)
 }
 
 func TestMakeFittedShadowKeepsWideSpriteInsideFrame(t *testing.T) {
@@ -181,6 +251,28 @@ func TestMakeFlightBodyTransformsInsideFrame(t *testing.T) {
 	assert.Less(t, bounds.Min.Y, groundBounds.Min.Y, "lift should move the transformed body upward")
 }
 
+func TestMakeFlightBodyFitsOpaqueArtworkInsideFrame(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, 32, 32))
+	for y := range 32 {
+		for x := range 32 {
+			src.SetNRGBA(x, y, color.NRGBA{A: 255})
+		}
+	}
+
+	out := makeFlightBody(src, flightPose{scaleX: 1.04, scaleY: 1.04, lift: 0.05})
+
+	for offset := range 32 {
+		assert.Zero(t, out.NRGBAAt(offset, 0).A, "top edge at x=%d", offset)
+		assert.Zero(t, out.NRGBAAt(offset, 31).A, "bottom edge at x=%d", offset)
+		assert.Zero(t, out.NRGBAAt(0, offset).A, "left edge at y=%d", offset)
+		assert.Zero(t, out.NRGBAAt(31, offset).A, "right edge at y=%d", offset)
+	}
+
+	empty := makeFlightBody(image.NewNRGBA(image.Rect(0, 0, 32, 32)), flightPose{})
+	_, emptyOK := alphaBounds(empty)
+	assert.False(t, emptyOK)
+}
+
 func TestMakeFlightShadowTracksHeight(t *testing.T) {
 	src := image.NewNRGBA(image.Rect(0, 0, 32, 32))
 	for y := 12; y < 24; y++ {
@@ -210,6 +302,27 @@ func TestFlightPoseSequencesAreContinuous(t *testing.T) {
 	assert.Len(t, hoverPoses, hoverFrames)
 	assert.Equal(t, takeOffPoses[len(takeOffPoses)-1], hoverPoses[0])
 	assert.Equal(t, hoverPoses[0], hoverPoses[len(hoverPoses)-1])
+}
+
+func TestGroundRunPosesRemainDistinctAtRuntimeResolution(t *testing.T) {
+	t.Parallel()
+	const size = 128
+	src := image.NewNRGBA(image.Rect(0, 0, size, size))
+	for y := size / 4; y < 7*size/8; y++ {
+		for x := size / 4; x < 3*size/4; x++ {
+			src.SetNRGBA(x, y, color.NRGBA{R: 100, A: 255})
+		}
+	}
+	for x := 3 * size / 4; x < size; x++ {
+		src.SetNRGBA(x, size/2, color.NRGBA{R: 200, A: 255})
+	}
+
+	hashes := make(map[[sha256.Size]byte]bool, len(groundRunPoses))
+	for _, pose := range groundRunPoses {
+		frame := makeFlightBody(src, pose)
+		hashes[sha256.Sum256(frame.Pix)] = true
+	}
+	assert.Len(t, hashes, len(groundRunPoses))
 }
 
 func maxAlpha(img *image.NRGBA) uint8 {

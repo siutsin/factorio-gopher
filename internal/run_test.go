@@ -2,12 +2,63 @@ package gopher
 
 import (
 	"image"
+	"image/color"
+	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestRunGaitEventsMatchLua(t *testing.T) {
+	var leftLandings, rightLandings []int
+	for frame, pose := range runGait {
+		previous := runGait[(frame+len(runGait)-1)%len(runGait)]
+		if previous.leftFoot > 0 && pose.leftFoot == 0 {
+			leftLandings = append(leftLandings, frame+1)
+		}
+		if previous.rightFoot > 0 && pose.rightFoot == 0 {
+			rightLandings = append(rightLandings, frame+1)
+		}
+	}
+
+	require.Len(t, leftLandings, 1)
+	require.Len(t, rightLandings, 1)
+	assert.Zero(t, groundRunPoses[leftLandings[0]-1].lift, "knight left step must touch ground")
+	assert.Zero(t, groundRunPoses[rightLandings[0]-1].lift, "knight right step must touch ground")
+	lua, err := os.ReadFile(filepath.Join(repoRoot(), "mod", "data-updates.lua"))
+	require.NoError(t, err)
+	assert.Contains(t, string(lua), "local LEFT_STEP_FRAME = "+strconv.Itoa(leftLandings[0]))
+	assert.Contains(t, string(lua), "local RIGHT_STEP_FRAME = "+strconv.Itoa(rightLandings[0]))
+}
+
+func TestRunBobKeepsLandingsAtBaseline(t *testing.T) {
+	for frame := range frames {
+		assert.GreaterOrEqual(t, runBob(frame), 0)
+		assert.LessOrEqual(t, runBob(frame), bobAmp)
+	}
+	assert.Zero(t, runBob(1))
+	assert.Zero(t, runBob(5))
+	assert.Equal(t, bobAmp, runBob(3))
+	assert.Equal(t, bobAmp, runBob(7))
+}
+
+func TestRunFramesPreserveBottomPixels(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, frameSize, frameSize))
+	src.SetNRGBA(frameSize/2, frameSize-1, color.NRGBA{R: 1, A: 255})
+	for frame := range frames {
+		out := makeRunFrame(src, runBob(frame), frame)
+		opaque := 0
+		for offset := 3; offset < len(out.Pix); offset += 4 {
+			if out.Pix[offset] != 0 {
+				opaque++
+			}
+		}
+		assert.Equal(t, 1, opaque, "frame %d", frame+1)
+	}
+}
 
 // TestIsBeige covers the centre, the in-tolerance edge, the just-outside
 // edge on each channel, and far-away black/white.
@@ -63,7 +114,11 @@ func TestRun(t *testing.T) {
 			runGenerator(t, Run, tc.wantErr, tc.blockSave, func(dir string) {
 				out, err := loadPNG(filepath.Join(dir, "gopher-running.png"))
 				require.NoError(t, err)
-				assert.Equal(t, image.Rect(0, 0, frameSize*frames, frameSize*len(directions)), out.Bounds())
+				assert.Equal(
+					t,
+					image.Rect(0, 0, runtimeFrameSize()*frames, runtimeFrameSize()*len(directions)),
+					out.Bounds(),
+				)
 			})
 		})
 	}

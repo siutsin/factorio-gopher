@@ -1,11 +1,12 @@
 // Low-level NRGBA PNG helpers used by the procedural sheet generators in
 // this package: load/save plus pixel-buffer transforms (clone, paste,
-// overlay, shift, resize, alpha scale, blacken, shear).
+// overlay, line drawing, shift, resize, alpha scale, blacken, shear).
 
 package gopher
 
 import (
 	"image"
+	"image/color"
 	"image/png"
 	"math"
 	"os"
@@ -62,6 +63,17 @@ func clone(src *image.NRGBA) *image.NRGBA {
 	return out
 }
 
+func flipHorizontal(src *image.NRGBA) *image.NRGBA {
+	bounds := src.Bounds()
+	out := newCanvas(bounds.Dx(), bounds.Dy())
+	for y := range bounds.Dy() {
+		for x := range bounds.Dx() {
+			out.SetNRGBA(bounds.Dx()-1-x, y, src.NRGBAAt(bounds.Min.X+x, bounds.Min.Y+y))
+		}
+	}
+	return out
+}
+
 // pasteAt draws src into dst at (dx, dy), replacing existing pixels.
 func pasteAt(dst *image.NRGBA, src image.Image, dx, dy int) {
 	b := src.Bounds()
@@ -80,6 +92,36 @@ func overlay(dst, src *image.NRGBA) {
 		dst.Pix[i+1] = src.Pix[i+1]
 		dst.Pix[i+2] = src.Pix[i+2]
 		dst.Pix[i+3] = src.Pix[i+3]
+	}
+}
+
+func drawThickLine(
+	img *image.NRGBA,
+	x0, y0, x1, y1, radius int,
+	colour color.NRGBA,
+) {
+	dx := x1 - x0
+	dy := y1 - y0
+	steps := max(abs(dx), abs(dy))
+	if steps == 0 {
+		drawSquare(img, x0, y0, radius, colour)
+		return
+	}
+	for step := 0; step <= steps; step++ {
+		x := x0 + dx*step/steps
+		y := y0 + dy*step/steps
+		drawSquare(img, x, y, radius, colour)
+	}
+}
+
+func drawSquare(img *image.NRGBA, cx, cy, radius int, colour color.NRGBA) {
+	bounds := img.Bounds()
+	for y := cy - radius; y <= cy+radius; y++ {
+		for x := cx - radius; x <= cx+radius; x++ {
+			if image.Pt(x, y).In(bounds) {
+				img.SetNRGBA(x, y, colour)
+			}
+		}
 	}
 }
 

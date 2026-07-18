@@ -5,7 +5,7 @@
 describe("data-updates", function()
   -- Build a fresh `data` table for each test so mutation can't leak between
   -- specs. The helper returns the lone armour set so assertions stay terse.
-  local function load_data_updates(fields)
+  local function load_data_updates(fields, corpse_fields)
     local armour_set = {
       idle = nil,
       idle_with_gun = nil,
@@ -17,16 +17,41 @@ describe("data-updates", function()
     for key, value in pairs(fields or {}) do
       armour_set[key] = value
     end
+    local corpse = {
+      pictures = { "base", "heavy", "power", "mech" },
+      water_reflection = { pictures = { "engineer-corpse" } },
+      armor_picture_mapping = {
+        ["light-armor"] = 1,
+        ["heavy-armor"] = 2,
+        ["power-armor"] = 3,
+        ["mech-armor"] = 4,
+        ["third-party-armor"] = 2,
+      },
+    }
+    for key, value in pairs(corpse_fields or {}) do
+      if value == false then
+        corpse[key] = nil
+      else
+        corpse[key] = value
+      end
+    end
+    local character = {
+      animations = { armour_set },
+      water_reflection = { pictures = { "engineer" } },
+    }
     _G.data = {
       raw = {
         character = {
-          character = { animations = { armour_set } },
+          character = character,
+        },
+        ["character-corpse"] = {
+          ["character-corpse"] = corpse,
         },
       },
     }
     -- Reset the package cache so repeated dofile/require land cleanly.
     dofile("mod/data-updates.lua")
-    return armour_set
+    return armour_set, corpse, character
   end
 
   it("wires idle with body and shadow layers", function()
@@ -37,9 +62,14 @@ describe("data-updates", function()
     assert.are.equal("__gopher__/graphics/gopher-shadow-8dir.png", set.idle.layers[2].filename)
   end)
 
-  it("wires idle_with_gun the same as idle", function()
+  it("wires idle_with_gun to dedicated armed sheets", function()
     local set = load_data_updates()
-    assert.are.same(set.idle, set.idle_with_gun)
+    assert.are.equal(
+      "__gopher__/graphics/gopher-idle-with-gun.png",
+      set.idle_with_gun.layers[1].filename
+    )
+    assert.are.equal(8, set.idle_with_gun.layers[1].direction_count)
+    assert.is_true(set.idle_with_gun.layers[2].draw_as_shadow)
   end)
 
   it("running uses the 8-frame run-cycle sheet", function()
@@ -52,25 +82,40 @@ describe("data-updates", function()
     assert.is_true(set.running.layers[2].draw_as_shadow)
   end)
 
-  it("running_with_gun uses 18 directions in a 6x3 grid", function()
+  it("running_with_gun uses an eight-frame cycle across two stripes", function()
     local set = load_data_updates()
     local body = set.running_with_gun.layers[1]
-    assert.are.equal("__gopher__/graphics/gopher-running-with-gun.png", body.filename)
+    assert.are.equal(8, body.frame_count)
     assert.are.equal(18, body.direction_count)
-    assert.are.equal(6, body.line_length)
+    assert.are.equal(2, #body.stripes)
+    assert.are.equal(8, body.stripes[1].width_in_frames)
+    assert.are.equal(16, body.stripes[1].height_in_frames)
+    assert.are.equal(2, body.stripes[2].height_in_frames)
     assert.is_true(set.running_with_gun.layers[2].draw_as_shadow)
   end)
 
-  it("clears flipped_shadow_running_with_gun to avoid duplicate gopher", function()
+  it("wires an east-cast shadow for engine-mirrored armed rows", function()
     local set = load_data_updates()
-    assert.is_nil(set.flipped_shadow_running_with_gun)
+    local shadow = set.flipped_shadow_running_with_gun.layers[1]
+    assert.are.equal(18, shadow.direction_count)
+    assert.are.equal(
+      "__gopher__/graphics/gopher-running-with-gun-flipped-1-shadow.png",
+      shadow.stripes[1].filename
+    )
+    assert.is_true(shadow.draw_as_shadow)
   end)
 
-  it("mining_with_tool uses the single south-facing pose", function()
-    local set = load_data_updates()
-    local body = set.mining_with_tool.layers[1]
-    assert.are.equal("__gopher__/graphics/gopher-s.png", body.filename)
-    assert.are.equal(1, body.direction_count)
+  it("aligns sounds and footprints with the eight-frame run cycle", function()
+    local _, _, character = load_data_updates()
+    assert.are.same({ 6 }, character.running_sound_animation_positions)
+    assert.are.same({ 2 }, character.moving_sound_animation_positions)
+    assert.are.same({ 6 }, character.left_footprint_frames)
+    assert.are.same({ 2 }, character.right_footprint_frames)
+  end)
+
+  it("removes vanilla engineer water reflections", function()
+    local _, _, character = load_data_updates()
+    assert.is_nil(character.water_reflection)
   end)
 
   it("uses knight sheets for mech-armour ground and flight", function()
@@ -88,34 +133,36 @@ describe("data-updates", function()
       "__gopher__/graphics/knight-idle-shadow.png",
       set.idle.layers[2].filename
     )
-    assert.are.same(set.idle, set.idle_with_gun)
     assert.are.equal(
-      "__gopher__/graphics/knight-idle.png",
-      set.mining_with_tool.layers[1].filename
+      "__gopher__/graphics/knight-idle-with-gun.png",
+      set.idle_with_gun.layers[1].filename
     )
-    assert.are.equal(27, set.mining_with_tool.layers[1].repeat_count)
-    assert.are.equal(0.45, set.mining_with_tool.layers[1].animation_speed)
+    assert.is_true(set.idle_with_gun.layers[2].draw_as_shadow)
     assert.are.equal(
       "__gopher__/graphics/knight-running.png",
       set.running.layers[1].filename
     )
     assert.are.equal(8, set.running.layers[1].frame_count)
     assert.are.equal(
-      "__gopher__/graphics/knight-running-with-gun.png",
-      set.running_with_gun.layers[1].filename
+      "__gopher__/graphics/knight-running-with-gun-1.png",
+      set.running_with_gun.layers[1].stripes[1].filename
     )
     assert.are.equal(18, set.running_with_gun.layers[1].direction_count)
-    assert.is_nil(set.flipped_shadow_running_with_gun)
+    assert.are.equal(8, set.running_with_gun.layers[1].frame_count)
+    assert.are.equal(
+      "__gopher__/graphics/knight-running-with-gun-flipped-1-shadow.png",
+      set.flipped_shadow_running_with_gun.layers[1].stripes[1].filename
+    )
 
     local take_off = set.take_off
     assert.are.equal(2, #take_off.layers)
     assert.are.equal("__gopher__/graphics/knight-take-off.png", take_off.layers[1].filename)
-    assert.are.equal(512, take_off.layers[1].width)
+    assert.are.equal(256, take_off.layers[1].width)
     assert.are.equal(16, take_off.layers[1].frame_count)
     assert.are.equal(16, take_off.layers[1].line_length)
     assert.are.equal(8, take_off.layers[1].direction_count)
     assert.are.equal(0.6, take_off.layers[1].animation_speed)
-    assert.are.equal(0.075, take_off.layers[1].scale)
+    assert.are.equal(0.15, take_off.layers[1].scale)
     assert.are.same({ 0, -0.40625 }, take_off.layers[1].shift)
     assert.are.equal("player", take_off.layers[1].usage)
     assert.are.equal(
@@ -151,10 +198,8 @@ describe("data-updates", function()
     local cases = {
       { label = "no armour" },
       { label = "light armour", armors = { "light-armor" } },
-      { label = "heavy armour", armors = { "heavy-armor" } },
-      { label = "modular armour", armors = { "modular-armor" } },
-      { label = "power armour", armors = { "power-armor" } },
-      { label = "power armour MK2", armors = { "power-armor-mk2" } },
+      { label = "heavy and modular armour", armors = { "heavy-armor", "modular-armor" } },
+      { label = "power armour", armors = { "power-armor", "power-armor-mk2" } },
     }
     for _, case in ipairs(cases) do
       local set = load_data_updates({ armors = case.armors })
@@ -171,31 +216,27 @@ describe("data-updates", function()
     end
   end)
 
-  it("does not assign knight flight to a different flying armour", function()
-    local stub = { layers = { "third-party-flight" } }
-    local smoke = { "third-party-smoke" }
-    local set = load_data_updates({
-      armors = { "jetpack-armor" },
-      take_off = stub,
-      landing = stub,
-      idle_with_gun_in_air = stub,
-      smoke_in_air = smoke,
-    })
-    assert.are.equal("__gopher__/graphics/gopher-8dir.png", set.idle.layers[1].filename)
-    assert.are.same(stub, set.take_off)
-    assert.are.same(stub, set.landing)
-    assert.are.same(stub, set.idle_with_gun_in_air)
-    assert.are.same(smoke, set.smoke_in_air)
+  it("does not invent optional airborne states", function()
+    local set = load_data_updates({ armors = { "mech-armor" } })
+    assert.is_nil(set.idle_in_air)
+    assert.is_nil(set.flying)
+    assert.is_nil(set.flying_with_gun)
   end)
 
-  it("reskins every armour tier, not just the first", function()
+  it("reskins every armour set, not just the first", function()
     -- Add a second armour set and re-run the file to confirm the loop walks
     -- the whole array.
-    local sets = { {}, {} }
+    local sets = { {}, { armors = { "heavy-armor", "modular-armor" } } }
     _G.data = {
       raw = {
         character = {
           character = { animations = sets },
+        },
+        ["character-corpse"] = {
+          ["character-corpse"] = {
+            pictures = { "base" },
+            armor_picture_mapping = {},
+          },
         },
       },
     }

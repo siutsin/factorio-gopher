@@ -6,20 +6,24 @@ package gopher
 
 import "path/filepath"
 
-// frameSize is the per-direction sprite edge in pixels. Defined as a var (not
-// const) so tests can shrink it via SetFrameSize for fast integration runs;
-// production callers never mutate it.
+// frameSize is the canonical per-direction source edge in pixels. Defined as
+// a var so tests can shrink it via SetFrameSize; production callers never
+// mutate it. Runtime sheets use quarter-size frames and compensate in Lua.
 var frameSize = 1024
+
+func runtimeFrameSize() int {
+	return max(1, frameSize/4)
+}
 
 // directions in Factorio's clockwise enum order, starting from N.
 var directions = []string{"n", "ne", "e", "se", "s", "sw", "w", "nw"}
 
-// gunMapping maps each of running_with_gun's 18 frames (20° apart starting
-// at 0°/N, clockwise) to its nearest 45° direction.
+// gunMapping follows Factorio's 18-row armed half-sweep from north through
+// east to south. The engine mirrors these rows for west-facing combinations.
 var gunMapping = []string{
-	"n", "n", "ne", "ne", "e", "e",
-	"se", "se", "s", "s", "s", "sw",
-	"sw", "w", "w", "nw", "nw", "n",
+	"n", "n", "n", "ne", "ne", "ne",
+	"ne", "e", "e", "e", "e", "se",
+	"se", "se", "se", "s", "s", "s",
 }
 
 // spritePath returns the path to the per-direction PNG for code d under
