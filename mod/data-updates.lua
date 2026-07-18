@@ -421,13 +421,30 @@ local knight_corpse = {
   },
 }
 
-local function has_armour(armour_set, armour_name)
-  for _, name in ipairs(armour_set.armors or {}) do
-    if name == armour_name then
-      return true
+local BASE_ARMOUR_NAMES = {
+  ["light-armor"] = true,
+  ["heavy-armor"] = true,
+  ["modular-armor"] = true,
+  ["power-armor"] = true,
+  ["power-armor-mk2"] = true,
+}
+
+local function is_base_armour_set(armour_set)
+  local armours = armour_set.armors or {}
+  if #armours == 0 then
+    return true
+  end
+  for _, name in ipairs(armours) do
+    if not BASE_ARMOUR_NAMES[name] then
+      return false
     end
   end
-  return false
+  return true
+end
+
+local function is_mech_armour_set(armour_set)
+  local armours = armour_set.armors or {}
+  return #armours == 1 and armours[1] == "mech-armor"
 end
 
 local function reskin_corpses()
@@ -448,7 +465,7 @@ local function reskin_corpses()
     return
   end
   for armour_name in pairs(mapping) do
-    if armour_name ~= "mech-armor" then
+    if BASE_ARMOUR_NAMES[armour_name] then
       rawset(mapping, armour_name, 1)
     end
   end
@@ -521,9 +538,9 @@ rawset(character, "left_footprint_frames", {LEFT_STEP_FRAME})
 rawset(character, "right_footprint_frames", {RIGHT_STEP_FRAME})
 
 for _, armour_set in ipairs(character.animations) do
-  if has_armour(armour_set, "mech-armor") then
+  if is_mech_armour_set(armour_set) then
     use_knight(armour_set)
-  else
+  elseif is_base_armour_set(armour_set) then
     use_gopher(armour_set)
   end
 end

@@ -2,6 +2,34 @@
 
 A Factorio 2.0 mod that replaces the player character with the Go gopher.
 
+## Support
+
+| Available option                  | API ID                            | No armour | Base armour | Mech armour    |
+|-----------------------------------|-----------------------------------|-----------|-------------|----------------|
+| Idle                              | `idle`                            | Supported | Supported   | Supported      |
+| Idle with gun                     | `idle_with_gun`                   | Supported | Supported   | Supported      |
+| Running                           | `running`                         | Supported | Supported   | Supported      |
+| Running with gun                  | `running_with_gun`                | Supported | Supported   | Supported      |
+| Running with gun (flipped shadow) | `flipped_shadow_running_with_gun` | Supported | Supported   | Supported      |
+| Mining                            | `mining_with_tool`                | Supported | Supported   | Supported      |
+| Airborne idle                     | `idle_in_air`                     | N/A       | N/A         | Conditional[1] |
+| Airborne idle with gun            | `idle_with_gun_in_air`            | N/A       | N/A         | Supported      |
+| Flying                            | `flying`                          | N/A       | N/A         | Conditional[1] |
+| Flying with gun                   | `flying_with_gun`                 | N/A       | N/A         | Conditional[1] |
+| Taking off                        | `take_off`                        | N/A       | N/A         | Supported      |
+| Landing                           | `landing`                         | N/A       | N/A         | Supported      |
+| Corpse graphics                   | `pictures`                        | Supported | Supported   | Supported      |
+| Corpse graphics (armoured)        | `armor_picture_mapping`           | N/A       | Supported   | Supported      |
+
+[1] Not defined by vanilla Space Age; supported if present.
+
+## Roadmap
+
+- Player-colour accents for multiplayer differentiation
+- Animated ground idle and armed-idle cycles
+
+There is no set timeline. Contributions are welcome.
+
 ## Code
 
 The code in this mod is copyright 2026 Simon Li and is distributed under the

@@ -1,5 +1,15 @@
 # Agent Instructions
 
+## Project Documentation
+
+Read `README.md` for the support matrix, installation steps, development
+commands, release workflow, and licences. Keep user-facing project guidance in
+the README; this file should contain only agent-specific workflow and technical
+invariants.
+
+After every code, asset, behaviour, or workflow update, review the project
+documentation and update all affected files in the same change.
+
 ## Instruction Scope
 
 When working in a subdirectory, check it and each directory between it and the
@@ -23,8 +33,9 @@ Run `make test` after any code change. This runs:
 - `make test-lua` with `busted -c mod/spec` plus luacov coverage
 
 `internal/SetFrameSize` is a test-only seam used by the internal test suite to
-shrink the 1024-px frame to 64-px so integration tests run in seconds rather
-than minutes. Production code never calls it.
+shrink 1024-px sources to 64 px and 256-px runtime frames to 16 px so
+integration tests run in seconds rather than minutes. Production code never
+calls it.
 
 ## Development Loop
 
@@ -48,6 +59,8 @@ the game installation for:
 - `data/base/prototypes/entity/entities.lua` (then search for
   `name = "character"`)
 - `data/base/prototypes/entity/character-animations.lua`
+- `data/space-age/prototypes/entity/mech-armor-animations.lua` when validating
+  mech armour
 
 On macOS these paths are inside `factorio.app/Contents/`. Steam users can
 locate the installation with **Manage > Browse local files**.
@@ -63,9 +76,27 @@ Each set has ground keys `idle`, `idle_with_gun`, `running`,
 `running_with_gun`, `flipped_shadow_running_with_gun`, and
 `mining_with_tool`, each with a `layers` list. The Space Age mech set also has
 `take_off`, `landing`, `idle_with_gun_in_air`, and `smoke_in_air`.
-Walk every armour set when reskinning. Only a set whose `armors` list contains
-`mech-armor` uses knight sheets; every other set uses the default gopher and
-keeps any third-party flight animations.
+Optional mech fields `idle_in_air`, `flying`, and `flying_with_gun` are
+replaced only when another mod defines them.
+Walk every armour set when reskinning. The default set and sets containing only
+base-game armour names use the gopher. Only a set containing exactly
+`mech-armor` uses knight sheets. Leave every set containing an unknown armour
+name untouched.
+
+**Mining invariant**: generated gopher and knight mining sheets contain body
+motion plus fitted shadows only. Do not draw a synthetic tool into either
+sheet; there are no per-direction hand anchors to keep it aligned.
+
+**Corpse target**:
+`data.raw["character-corpse"]["character-corpse"]`. Its `pictures` field
+contains armour variations; the first is the default, and
+`armor_picture_mapping` assigns armour names to variation indices. Factorio
+uses the highest mapped armour item found anywhere in the corpse inventory,
+not only the item worn at death. Both frames in every custom corpse animation
+must already be horizontal fallen poses; they are not an upright-to-fall
+transition. Remap only built-in armour names and `mech-armor`; preserve unknown
+mapping entries and their picture variations. The base corpse never expires,
+so remove old corpses before comparing variations in-game.
 
 **Sprite paths** use the `__gopher__/...` prefix to resolve to this mod's
 folder.
@@ -88,6 +119,8 @@ Factorio assets must be PNGs. Keep artwork attribution and licence details in
 
 - Mod definition: `info.json` for name, version, Factorio version, and deps.
 - Prototype mutation: Lua in `data-updates.lua`.
+- Corpse mutation: `data-updates.lua` targeting
+  `data.raw["character-corpse"]["character-corpse"]`.
 - Sprite inputs and runtime assets: tracked RGBA PNGs under `mod/graphics/`.
 - Sprite generation: `make build` (or `go run ./cmd all`).
 - Generated-asset verification: after `make build` in a clean clone,

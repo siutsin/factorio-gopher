@@ -213,7 +213,7 @@ describe("data-updates", function()
     assert.are.same(smoke, set.smoke_in_air)
   end)
 
-  it("keeps every non-mech armour tier on the default gopher", function()
+  it("keeps every built-in armour tier on the default gopher", function()
     local cases = {
       { label = "no armour" },
       { label = "light armour", armors = { "light-armor" } },
@@ -233,6 +233,40 @@ describe("data-updates", function()
         case.label
       )
     end
+  end)
+
+  it("leaves third-party armour animation sets untouched", function()
+    local ground = { layers = { "third-party-ground" } }
+    local flight = { layers = { "third-party-flight" } }
+    local smoke = { "third-party-smoke" }
+    local set = load_data_updates({
+      armors = { "power-armor-mk2", "jetpack-armor" },
+      idle = ground,
+      idle_with_gun = ground,
+      mining_with_tool = ground,
+      running = ground,
+      running_with_gun = ground,
+      flipped_shadow_running_with_gun = ground,
+      take_off = flight,
+      landing = flight,
+      idle_with_gun_in_air = flight,
+      smoke_in_air = smoke,
+    })
+    for _, key in ipairs({
+      "idle",
+      "idle_with_gun",
+      "mining_with_tool",
+      "running",
+      "running_with_gun",
+      "flipped_shadow_running_with_gun",
+    }) do
+      assert.are.same(ground, set[key], key)
+    end
+    assert.is_nil(set.mining_with_tool_particles_animation_positions)
+    assert.are.same(flight, set.take_off)
+    assert.are.same(flight, set.landing)
+    assert.are.same(flight, set.idle_with_gun_in_air)
+    assert.are.same(smoke, set.smoke_in_air)
   end)
 
   it("replaces optional airborne states only for mech armour", function()
@@ -262,7 +296,7 @@ describe("data-updates", function()
     assert.is_nil(set.flying_with_gun)
   end)
 
-  it("reskins every armour set, not just the first", function()
+  it("reskins every matching built-in armour set", function()
     -- Add a second armour set and re-run the file to confirm the loop walks
     -- the whole array.
     local sets = { {}, { armors = { "heavy-armor", "modular-armor" } } }
@@ -286,7 +320,7 @@ describe("data-updates", function()
     end
   end)
 
-  it("replaces default and mapped corpses without deleting other variations", function()
+  it("replaces built-in corpses without changing third-party mappings", function()
     local _, corpse = load_data_updates()
     local gopher = corpse.pictures[1]
     assert.are.equal("__gopher__/graphics/gopher-corpse.png", gopher.layers[1].filename)
@@ -294,7 +328,9 @@ describe("data-updates", function()
     assert.are.equal(2, gopher.layers[1].line_length)
     assert.is_true(gopher.layers[2].draw_as_shadow)
     assert.are.equal(1, corpse.armor_picture_mapping["light-armor"])
-    assert.are.equal(1, corpse.armor_picture_mapping["third-party-armor"])
+    assert.are.equal(1, corpse.armor_picture_mapping["heavy-armor"])
+    assert.are.equal(1, corpse.armor_picture_mapping["power-armor"])
+    assert.are.equal(2, corpse.armor_picture_mapping["third-party-armor"])
 
     assert.are.equal(5, #corpse.pictures)
     local knight = corpse.pictures[5]
@@ -363,5 +399,70 @@ describe("data-updates", function()
       corpse.pictures[1].layers[1].filename
     )
     assert.is_nil(corpse.armor_picture_mapping)
+  end)
+
+  it("keeps the complete animation contract across mixed armour sets", function()
+    local third_party_ground = { layers = { "jetpack-ground" } }
+    local third_party_flight = { layers = { "jetpack" } }
+    local sets = {
+      {},
+      {
+        armors = { "jetpack-armor" },
+        idle = third_party_ground,
+        idle_with_gun = third_party_ground,
+        mining_with_tool = third_party_ground,
+        running = third_party_ground,
+        running_with_gun = third_party_ground,
+        flipped_shadow_running_with_gun = third_party_ground,
+        take_off = third_party_flight,
+        landing = third_party_flight,
+        idle_with_gun_in_air = third_party_flight,
+      },
+      {
+        armors = { "mech-armor" },
+        take_off = { layers = { "mech" } },
+        landing = { layers = { "mech" } },
+        idle_with_gun_in_air = { layers = { "mech" } },
+      },
+    }
+    local character = { animations = sets }
+    local corpse = {
+      pictures = { "base", "mech" },
+      armor_picture_mapping = { ["mech-armor"] = 2 },
+    }
+    _G.data = {
+      raw = {
+        character = { character = character },
+        ["character-corpse"] = { ["character-corpse"] = corpse },
+      },
+    }
+
+    dofile("mod/data-updates.lua")
+
+    local required = {
+      "idle",
+      "idle_with_gun",
+      "mining_with_tool",
+      "running",
+      "running_with_gun",
+    }
+    for index, set in ipairs(sets) do
+      for _, key in ipairs(required) do
+        assert.is_not_nil(set[key], "set " .. index .. " missing " .. key)
+      end
+      assert.is_not_nil(set.flipped_shadow_running_with_gun)
+    end
+    for _, key in ipairs(required) do
+      assert.are.same(third_party_ground, sets[2][key], key)
+    end
+    assert.are.same(third_party_ground, sets[2].flipped_shadow_running_with_gun)
+    assert.are.same(third_party_flight, sets[2].take_off)
+    assert.are.same(third_party_flight, sets[2].landing)
+    assert.are.same(third_party_flight, sets[2].idle_with_gun_in_air)
+    assert.are.equal("__gopher__/graphics/knight-take-off.png", sets[3].take_off.layers[1].filename)
+    assert.are.equal("__gopher__/graphics/knight-hover.png", sets[3].idle_with_gun_in_air.layers[1].filename)
+    assert.are.same({ 6 }, character.running_sound_animation_positions)
+    assert.are.same({ 2 }, character.right_footprint_frames)
+    assert.are.equal(3, corpse.armor_picture_mapping["mech-armor"])
   end)
 end)
