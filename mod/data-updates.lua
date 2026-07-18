@@ -56,6 +56,31 @@ local gopher_running_shadow = {
   draw_as_shadow = true,
 }
 
+local gopher_mining = {
+  filename = "__gopher__/graphics/gopher-mining.png",
+  width = FRAME,
+  height = FRAME,
+  frame_count = 8,
+  direction_count = 8,
+  line_length = 8,
+  animation_speed = 0.45,
+  scale = SCALE,
+  shift = SHIFT,
+}
+
+local gopher_mining_shadow = {
+  filename = "__gopher__/graphics/gopher-mining-shadow.png",
+  width = FRAME,
+  height = FRAME,
+  frame_count = 8,
+  direction_count = 8,
+  line_length = 8,
+  animation_speed = 0.45,
+  scale = SCALE,
+  shift = SHIFT,
+  draw_as_shadow = true,
+}
+
 -- running_with_gun requires 18 or 40 directions. Factorio's 18-row layout
 -- sweeps N -> E -> S over the east half-circle; the engine mirrors those rows
 -- for west-facing combinations. A separate flipped shadow keeps the west body
@@ -194,6 +219,31 @@ local knight_idle_with_gun_shadow = {
   height = KNIGHT_FRAME,
   frame_count = 1,
   direction_count = 8,
+  scale = KNIGHT_SCALE,
+  shift = KNIGHT_SHIFT,
+  draw_as_shadow = true,
+}
+
+local knight_mining = {
+  filename = "__gopher__/graphics/knight-mining.png",
+  width = KNIGHT_FRAME,
+  height = KNIGHT_FRAME,
+  frame_count = 8,
+  direction_count = 8,
+  line_length = 8,
+  animation_speed = 0.45,
+  scale = KNIGHT_SCALE,
+  shift = KNIGHT_SHIFT,
+}
+
+local knight_mining_shadow = {
+  filename = "__gopher__/graphics/knight-mining-shadow.png",
+  width = KNIGHT_FRAME,
+  height = KNIGHT_FRAME,
+  frame_count = 8,
+  direction_count = 8,
+  line_length = 8,
+  animation_speed = 0.45,
   scale = KNIGHT_SCALE,
   shift = KNIGHT_SHIFT,
   draw_as_shadow = true,
@@ -386,6 +436,8 @@ local function reskin_corpses()
 end
 
 local function use_gopher(armour_set)
+  armour_set.mining_with_tool = { layers = { gopher_mining, gopher_mining_shadow } }
+  armour_set.mining_with_tool_particles_animation_positions = {5}
   armour_set.idle = { layers = { gopher_8dir, gopher_8dir_shadow } }
   armour_set.idle_with_gun = {
     layers = { gopher_idle_with_gun, gopher_idle_with_gun_shadow }
@@ -404,6 +456,8 @@ local function use_knight(armour_set)
   armour_set.idle_with_gun = {
     layers = { knight_idle_with_gun, knight_idle_with_gun_shadow }
   }
+  armour_set.mining_with_tool = { layers = { knight_mining, knight_mining_shadow } }
+  armour_set.mining_with_tool_particles_animation_positions = {5}
   armour_set.running = { layers = { knight_running, knight_running_shadow } }
   armour_set.running_with_gun = {
     layers = { knight_running_with_gun, knight_running_with_gun_shadow }
