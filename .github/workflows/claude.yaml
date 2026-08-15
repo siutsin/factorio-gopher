@@ -91,7 +91,7 @@ jobs:
             Use only `gh pr view` and `gh pr diff` while inspecting the PR. The only permitted write is the final review comment described below.
             Review only issues introduced by the PR, with focus on:
             1. Go CLI, HTTP, file, and symlink handling; sprite generators; error handling; and tests
-            2. Factorio 2.0 Lua prototype mutations: data-updates timing, every armour set, mech-only knight sheets, preserved third-party flight animations, and `__gopher__` paths
+            2. Factorio 2.1 Lua prototype mutations: data-updates timing, every armour set, mech-only knight sheets, preserved third-party flight animations, and `__gopher__` paths
             3. Sprite frame geometry, directions, PNG provenance and format, asset paths, generated-sheet consistency, packaging, and release versions
             4. Security vulnerabilities and configuration correctness, especially GitHub Actions permissions, secrets, pinned actions, YAML, and JSON
             5. Validation coverage: `make lint` after text, Go, or Lua changes; `make test` after code changes; `make build` and a clean `mod/graphics` diff after generator or asset changes; and `make package` after packaging changes. Assess the PR's tests and CI evidence; do not run them.
