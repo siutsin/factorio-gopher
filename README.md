@@ -1,6 +1,6 @@
 # factorio-gopher
 
-A Factorio 2.0 mod that replaces the player character with the Go gopher.
+A Factorio 2.1 mod that replaces the player character with the Go gopher.
 
 ## Support
 
