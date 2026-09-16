@@ -2,7 +2,7 @@ module github.com/siutsin/factorio-gopher
 
 go 1.26.3
 
-require golang.org/x/image v0.45.0
+require golang.org/x/image v0.46.0
 
 require go.yaml.in/yaml/v3 v3.0.5 // indirect
 
